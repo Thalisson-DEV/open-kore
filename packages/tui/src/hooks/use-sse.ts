@@ -99,9 +99,12 @@ export function useSSE() {
                 ));
               } else if (data.type === 'permission_required') {
                 setPendingPermissionId(data.id);
-                setMessages(prev => [...prev, {
-                  id: data.id, role: 'permission', content: '', status: 'pending', permission: data
-                }]);
+                setMessages(prev => {
+                  if (prev.some(m => m.id === data.id)) return prev;
+                  return [...prev, {
+                    id: data.id, role: 'permission', content: '', status: 'pending', permission: data
+                  }];
+                });
               } else if (data.type === 'finish') {
                 setMessages(prev => prev.map(msg =>
                   msg.id === asstMsgId ? { ...msg, status: 'done' } : msg

@@ -120,12 +120,13 @@ app.post('/message', async (c) => {
     const permissionManager = PermissionManager.getInstance()
     
     const allTools = getTools(async (req) => {
-      console.log(`[Server] Tool "${req.tool}" requer permissão...`);
+      console.log(`[Server] Tool "${req.tool}" requer permissão para:`, req.input.path || req.input.command);
       await stream.writeSSE({
         data: JSON.stringify({ 
           type: 'permission_required', 
           id: req.id,
           tool: req.tool,
+          path: req.input.path || req.input.command || '',
           input: req.input,
           diff: req.diff 
         })
