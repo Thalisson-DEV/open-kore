@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+.bun/
+
+# Build outputs
+dist/
+build/
+out/
+*.exe
+*.dll
+*.dylib
+*.so
+
+# Turborepo
+.turbo/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+bun-debug.log*
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+*.enc
+*.key
+
+# Local configuration (OpenKore specific)
+.openkore/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db

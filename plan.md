@@ -38,11 +38,7 @@ Qualquer dúvida de implementação: consultar `ARCHITECTURE.md`.
 - [ ] Wizard de primeiro boot: detectar se config existe, se não, perguntar provider + API key + modelo
 
 ### 1.4 — TUI mínima
-- [ ] Criar `packages/tui/src/index.tsx` com Ink
-- [ ] Implementar `StatusBar` — nome do app, agente ativo, modelo, cor verde `#4ade80`
-- [ ] Implementar `InputField` — `›` verde, histórico com `↑/↓`
-- [ ] `index.tsx` busca `GET /session` e popula o `StatusBar`
-- [ ] `Ctrl+C` encerra tudo limpo
+- [ ] Avaliar a documentação @interface.md e realizar as implementações contidas lá.
 
 **Verificação:** `bun run dev` abre a TUI com status bar verde e input funcionando.
 

@@ -1,0 +1,19 @@
+{
+  "name": "openkore",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "bun@1.3.12",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "turbo": "latest",
+    "typescript": "latest"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@openkore/tui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/index.tsx",
+    "build": "bun build src/index.tsx --outdir ./dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ink": "latest",
+    "ink-select-input": "^6.2.0",
+    "ink-text-input": "^6.0.0",
+    "react": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "latest"
+  }
+}
