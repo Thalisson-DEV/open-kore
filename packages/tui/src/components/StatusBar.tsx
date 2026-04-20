@@ -11,10 +11,17 @@ interface StatusBarProps {
 
 const formatPath = (p: string) => {
   const home = os.homedir()
-  if (p.startsWith(home)) {
-    return p.replace(home, '~')
+  let projectPath = p;
+  if (p.endsWith('packages/tui')) {
+    projectPath = path.join(p, '..', '..');
+  } else if (p.endsWith('packages/server')) {
+    projectPath = path.join(p, '..', '..');
   }
-  return p
+
+  if (projectPath.startsWith(home)) {
+    return projectPath.replace(home, '~')
+  }
+  return projectPath
 }
 
 export const StatusBar: React.FC<StatusBarProps> = ({ agent, model, version = 'v0.1.0-alpha' }) => {

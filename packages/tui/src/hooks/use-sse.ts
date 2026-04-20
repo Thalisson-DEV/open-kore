@@ -10,12 +10,15 @@ export interface SSEMessage {
   toolInput?: any;
   toolOutput?: any;
   permission?: PermissionRequest;
+  agentId?: string;
 }
 
 export function useSSE() {
   const [messages, setMessages] = useState<SSEMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [pendingPermissionId, setPendingPermissionId] = useState<string | null>(null);
+  const [touchedFiles, setTouchedFiles] = useState<string[]>([]);
+  const [sessionUsage, setSessionUsage] = useState({ promptTokens: 0, completionTokens: 0, totalTokens: 0 });
   
   const abortControllerRef = useRef<AbortController | null>(null);
   const contentRef = useRef('');
@@ -24,7 +27,6 @@ export function useSSE() {
 
   const sendMessage = useCallback(async (content: string) => {
     const now = Date.now();
-    // Proteção contra múltiplos envios rápidos (< 500ms)
     if (!content.trim() || isBusyRef.current || (now - lastSendRef.current < 500)) return;
 
     lastSendRef.current = now;
@@ -33,7 +35,6 @@ export function useSSE() {
     contentRef.current = '';
 
     const asstMsgId = `asst-${now}`;
-    
     setMessages(prev => [
       ...prev,
       { id: `user-${now}`, role: 'user', content, status: 'done' },
@@ -52,19 +53,16 @@ export function useSSE() {
       });
 
       if (!response.body) throw new Error('Falha ao conectar com o servidor');
-
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let streamBuffer = '';
 
       while (true) {
         const { done, value } = await reader.read();
-        
         if (value) {
           streamBuffer += decoder.decode(value, { stream: true });
           const events = streamBuffer.split('\n\n');
           streamBuffer = events.pop() || ''; 
-          
           for (const eventStr of events) {
             const lines = eventStr.split('\n');
             let dataStr = '';
@@ -74,58 +72,56 @@ export function useSSE() {
                 dataStr = trimmed.substring(trimmed.indexOf(':') + 1).trim();
               }
             }
-            
             if (!dataStr) continue;
-
             try {
               const data = JSON.parse(dataStr);
               if (data.type === 'text' && typeof data.delta === 'string') {
                 contentRef.current += data.delta;
                 const snapshot = contentRef.current;
                 setMessages(prev => prev.map(msg =>
-                  msg.id === asstMsgId ? { ...msg, content: snapshot } : msg
+                  msg.id === asstMsgId ? { ...msg, content: snapshot, agentId: data.agent } : msg
                 ));
               } else if (data.type === 'tool_start') {
+                if (data.input?.path || data.input?.filePath) {
+                  const f = data.input.path || data.input.filePath;
+                  setTouchedFiles(prev => [...new Set([...prev, f])]);
+                }
                 setMessages(prev => [...prev, {
                   id: `tool-${Date.now()}-${Math.random()}`,
                   role: 'tool', content: '', status: 'streaming',
-                  toolName: data.name, toolInput: data.input
+                  toolName: data.name, toolInput: data.input, agentId: data.agent
                 }]);
               } else if (data.type === 'tool_result') {
+                const isError = data.output && (data.output.error || data.output.success === false);
                 setMessages(prev => prev.map(msg =>
                   msg.role === 'tool' && msg.toolName === data.name && msg.status === 'streaming'
-                    ? { ...msg, status: 'done', toolOutput: data.output }
+                    ? { ...msg, status: isError ? 'error' : 'done', toolOutput: data.output }
                     : msg
                 ));
+              } else if (data.type === 'usage') {
+                setSessionUsage(prev => ({
+                  promptTokens: prev.promptTokens + data.promptTokens,
+                  completionTokens: prev.completionTokens + data.completionTokens,
+                  totalTokens: prev.totalTokens + data.totalTokens
+                }));
               } else if (data.type === 'permission_required') {
                 setPendingPermissionId(data.id);
                 setMessages(prev => {
                   if (prev.some(m => m.id === data.id)) return prev;
-                  return [...prev, {
-                    id: data.id, role: 'permission', content: '', status: 'pending', permission: data
-                  }];
+                  return [...prev, { id: data.id, role: 'permission', content: '', status: 'pending', permission: data }];
                 });
               } else if (data.type === 'finish') {
-                setMessages(prev => prev.map(msg =>
-                  msg.id === asstMsgId ? { ...msg, status: 'done' } : msg
-                ));
-              } else if (data.type === 'error') {
-                setMessages(prev => prev.map(msg =>
-                  msg.id === asstMsgId ? { ...msg, status: 'error', content: contentRef.current + `\n[Erro: ${data.message}]` } : msg
-                ));
+                setMessages(prev => prev.map(msg => msg.id === asstMsgId ? { ...msg, status: 'done' } : msg));
               }
             } catch (e) {}
           }
         }
-
         if (done) break;
       }
     } catch (e: any) {
       const status = e.name === 'AbortError' ? 'canceled' : 'error';
       const errorMsg = e.name === 'AbortError' ? 'interrompido pelo usuário' : `[Erro de conexão: ${e.message}]`;
-      setMessages(prev => prev.map(msg =>
-        msg.id === asstMsgId ? { ...msg, status, content: contentRef.current || errorMsg } : msg
-      ));
+      setMessages(prev => prev.map(msg => msg.id === asstMsgId ? { ...msg, status, content: contentRef.current || errorMsg } : msg));
     } finally {
       setIsStreaming(false);
       isBusyRef.current = false;
@@ -133,18 +129,17 @@ export function useSSE() {
     }
   }, []);
 
-  const cancelMessage = useCallback(() => {
-    if (abortControllerRef.current) abortControllerRef.current.abort();
-    setIsStreaming(false);
-    isBusyRef.current = false;
-  }, []);
-
   return {
     messages,
     isStreaming,
-    isProcessing: isStreaming,
+    touchedFiles,
+    sessionUsage,
     sendMessage,
-    cancelMessage,
+    cancelMessage: useCallback(() => {
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+      setIsStreaming(false);
+      isBusyRef.current = false;
+    }, []),
     pendingPermission: messages.find(m => m.id === pendingPermissionId)?.permission || null,
     resolvePermission: useCallback(async (action: 'yes' | 'no' | 'always') => {
       if (!pendingPermissionId) return;

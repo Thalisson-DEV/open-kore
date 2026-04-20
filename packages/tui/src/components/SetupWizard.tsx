@@ -12,7 +12,8 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
   const [userName, setUserName] = useState('')
   const [provider, setProvider] = useState('')
   const [apiKey, setApiKey] = useState('')
-  const [model, setModel] = useState('')
+  const [tier1Model, setTier1Model] = useState('')
+  const [tier2Model, setTier2Model] = useState('')
   const [ollamaModels, setOllamaModels] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -27,7 +28,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
         const data = await res.json()
         setOllamaModels(data.models || [])
         setLoading(false)
-        setStep(3) // Pula API Key para Ollama
+        setStep(3) // Pula para Tier 1
       } catch (e) {
         setLoading(false)
         setStep(3)
@@ -39,16 +40,27 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
 
   const handleApiKeySubmit = () => setStep(3)
   
-  const handleModelSelect = (item: { value: string }) => {
-    setModel(item.value)
-    handleFinalSubmit(item.value)
+  const handleTier1Select = (item: { value: string }) => {
+    setTier1Model(item.value)
+    setStep(4)
   }
 
-  const handleModelTextSubmit = (val: string) => {
-    handleFinalSubmit(val)
+  const handleTier1TextSubmit = (val: string) => {
+    setTier1Model(val)
+    setStep(4)
   }
 
-  const handleFinalSubmit = async (finalModel: string) => {
+  const handleTier2Select = (item: { value: string }) => {
+    setTier2Model(item.value)
+    handleFinalSubmit(tier1Model, item.value)
+  }
+
+  const handleTier2TextSubmit = (val: string) => {
+    setTier2Model(val)
+    handleFinalSubmit(tier1Model, val)
+  }
+
+  const handleFinalSubmit = async (t1: string, t2: string) => {
     setLoading(true)
     try {
       await fetch('http://localhost:8080/setup', {
@@ -58,8 +70,10 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
           userName,
           provider, 
           apiKey: provider === 'ollama' ? 'none' : apiKey, 
-          model: finalModel,
-          masterPassword: 'alpha-no-password' // Temporário para o Alpha
+          tier1Model: t1,
+          tier2Model: t2,
+          model: t2, // Retrocompatibilidade
+          masterPassword: 'alpha-no-password'
         })
       })
       onComplete()
@@ -109,42 +123,35 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
         </Box>
       )}
 
-      {step === 3 && provider === 'ollama' && (
+      {step === 3 && (
         <Box flexDirection="column" marginTop={1} alignItems="center">
-          <Text color="#666666">Selecione um modelo instalado no seu Ollama:</Text>
+          <Text color="#666666">Escolha o modelo Tier 1 (Rápido/Leitura):</Text>
           <Box marginTop={1}>
-            {ollamaModels.length > 0 ? (
-              <SelectInput 
-                items={ollamaModels.map(m => ({ label: m, value: m }))} 
-                onSelect={handleModelSelect} 
-              />
+            {provider === 'ollama' && ollamaModels.length > 0 ? (
+              <SelectInput items={ollamaModels.map(m => ({ label: m, value: m }))} onSelect={handleTier1Select} />
             ) : (
-              <Box flexDirection="column" alignItems="center">
-                <Text color="red">Nenhum modelo encontrado no Ollama.</Text>
-                <Text color="gray">Certifique-se que o Ollama está rodando.</Text>
-                <Box backgroundColor="#111111" paddingX={2} paddingY={1} marginTop={1}>
-                  <Text color="#666666">Digite o nome do modelo manualmente: </Text>
-                  <TextInput value={model} onChange={setModel} onSubmit={handleModelTextSubmit} />
-                </Box>
+              <Box backgroundColor="#111111" paddingX={2} paddingY={1} minWidth={40}>
+                <Text color="#7a9e7a">› </Text>
+                <TextInput value={tier1Model} onChange={setTier1Model} onSubmit={handleTier1TextSubmit} placeholder="Ex: qwen-2.5-coder-7b" />
               </Box>
             )}
           </Box>
         </Box>
       )}
 
-      {step === 2 && provider === 'openrouter' && (
+      {step === 4 && (
         <Box flexDirection="column" marginTop={1} alignItems="center">
-          <Text color="#666666">Qual modelo deseja usar?</Text>
-          <Box backgroundColor="#111111" paddingX={2} paddingY={1} marginTop={1} minWidth={40}>
-            <Text color="#7a9e7a">› </Text>
-            <TextInput 
-              value={model} 
-              onChange={setModel} 
-              onSubmit={handleModelTextSubmit} 
-              placeholder="Ex: qwen/qwen-2.5-coder-32b-instruct" 
-            />
+          <Text color="#666666">Escolha o modelo Tier 2 (Inteligente/Escrita):</Text>
+          <Box marginTop={1}>
+            {provider === 'ollama' && ollamaModels.length > 0 ? (
+              <SelectInput items={ollamaModels.map(m => ({ label: m, value: m }))} onSelect={handleTier2Select} />
+            ) : (
+              <Box backgroundColor="#111111" paddingX={2} paddingY={1} minWidth={40}>
+                <Text color="#7a9e7a">› </Text>
+                <TextInput value={tier2Model} onChange={setTier2Model} onSubmit={handleTier2TextSubmit} placeholder="Ex: qwen-2.5-coder-32b" />
+              </Box>
+            )}
           </Box>
-          <Text color="gray" dimColor marginTop={1}>Pressione Enter para o padrão (Qwen 2.5 Coder)</Text>
         </Box>
       )}
     </Box>

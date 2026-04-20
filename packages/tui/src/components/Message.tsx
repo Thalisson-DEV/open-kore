@@ -88,34 +88,31 @@ export const Message: React.FC<MessageProps> = ({
   // Renderização de Ferramentas
   if (isTool) {
     const isPending = status === 'streaming';
-    // Extrai o caminho do arquivo de diferentes possíveis formatos de input
-    const filePath = toolInput?.path || toolInput?.file_path || (typeof toolInput === 'string' ? toolInput : '');
-    const dirPath = toolInput?.dir_path;
     
-    // Formata o nome da ferramenta (ex: readFile -> ReadFile)
+    // Extrai o recurso de forma abrangente
+    const resource = 
+      toolInput?.path || 
+      toolInput?.file_path || 
+      toolInput?.directory || 
+      toolInput?.command || 
+      (typeof toolInput === 'string' ? toolInput : '');
+    
     const formattedName = toolName ? toolName.charAt(0).toUpperCase() + toolName.slice(1) : '';
 
     return (
       <Box flexDirection="column" marginLeft={2} marginBottom={1}>
         <Box flexDirection="row">
-          <Text color={isPending ? "#EBCB8B" : "#7a9e7a"}>
-            {isPending ? <Spinner type="dots" /> : "✓"} 
+          <Text color={isPending ? "#EBCB8B" : (status === 'error' || status === 'canceled' ? "#F85149" : "#7a9e7a")}>
+            {isPending ? <Spinner type="dots" /> : (status === 'error' || status === 'canceled' ? "✗" : "✓")} 
           </Text>
-          <Text color={isPending ? "#EBCB8B" : "#7a9e7a"} bold> {formattedName} </Text>
-          {(filePath || dirPath) && (
-            <Text color="#666666"> {filePath || dirPath}</Text>
+          <Text color={isPending ? "#EBCB8B" : (status === 'error' || status === 'canceled' ? "#F85149" : "#7a9e7a")} bold> {formattedName} </Text>
+          {resource && (
+            <Text color="#666666"> {resource}</Text>
           )}
         </Box>
-        {status === 'done' && toolOutput && (
-          <Box flexDirection="column" marginTop={1} paddingX={1} borderStyle="round" borderColor="#222222">
-             <Text color="#444444">--- Content from referenced files ---</Text>
-             <Text color="#666666">Content from @{filePath || 'file'}:</Text>
-             <Box paddingLeft={1} marginY={1}>
-               <Text color="#A0A0A0">
-                 {typeof toolOutput === 'string' ? toolOutput : (toolOutput.content || JSON.stringify(toolOutput, null, 2))}
-               </Text>
-             </Box>
-             <Text color="#444444">--- End of content ---</Text>
+        {status === 'error' && toolOutput && (
+          <Box flexDirection="column" marginTop={0} paddingX={1}>
+             <Text color="#F85149">Erro: {toolOutput.error || JSON.stringify(toolOutput)}</Text>
           </Box>
         )}
       </Box>

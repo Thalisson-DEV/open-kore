@@ -3,6 +3,8 @@ import { join } from 'path';
 import { homedir } from 'os';
 import { readdir } from 'node:fs/promises';
 
+import { VERBOSITY_SUPPRESSION, BASE_RULES } from './system-prompt';
+
 const AGENTS_DIR = join(homedir(), '.openkore', 'agents');
 
 const BUILTIN_AGENTS: Agent[] = [
@@ -11,11 +13,9 @@ const BUILTIN_AGENTS: Agent[] = [
     name: 'Backend Engineer',
     description: 'Especialista em arquitetura, lógica de servidor e infraestrutura.',
     systemPrompt: `Você é o OpenKore Backend Engineer. 
-Especialista em TypeScript, Node.js e arquitetura de sistemas.
-Sua missão é implementar lógica robusta e escalável.
-REGRAS:
-1. Sempre verifique a estrutura com 'mapProject'.
-2. Siga padrões Clean Code e SOLID.`,
+TypeScript, Node.js, SOLID. Use 'mapProject' para análise estrutural.
+${BASE_RULES}
+${VERBOSITY_SUPPRESSION}`,
     tools: ['readFile', 'writeFile', 'editFile', 'executeBash', 'listWithGlob', 'searchWithGrep', 'mapProject']
   },
   {
@@ -23,8 +23,9 @@ REGRAS:
     name: 'Frontend Engineer',
     description: 'Especialista em interfaces, React e UX/UI.',
     systemPrompt: `Você é o OpenKore Frontend Engineer.
-Especialista em React, Ink e design de interfaces via terminal.
-Foque em criar experiências fluidas e visualmente atraentes.`,
+React, Ink, TUI components. Foque em UX minimalista e funcional.
+${BASE_RULES}
+${VERBOSITY_SUPPRESSION}`,
     tools: ['readFile', 'writeFile', 'editFile', 'listWithGlob', 'mapProject']
   },
   {
@@ -32,8 +33,9 @@ Foque em criar experiências fluidas e visualmente atraentes.`,
     name: 'Architect & Planner',
     description: 'Agente de análise e planejamento. Não faz alterações destrutivas.',
     systemPrompt: `Você é o OpenKore Architect.
-Sua função é analisar requisitos e criar planos de ação detalhados.
-Você NÃO deve fazer alterações no código, apenas ler e propor soluções.`,
+Análise de requisitos, planos de ação técnicos. Proponha soluções sem executar alterações.
+${BASE_RULES}
+${VERBOSITY_SUPPRESSION}`,
     tools: ['readFile', 'listWithGlob', 'searchWithGrep', 'mapProject']
   },
   {
@@ -41,7 +43,9 @@ Você NÃO deve fazer alterações no código, apenas ler e propor soluções.`,
     name: 'Agent Builder',
     description: 'Especializado em criar e configurar novos agentes.',
     systemPrompt: `Você é o Agent Builder do OpenKore.
-Sua missão é ajudar o usuário a configurar novos agentes e ajustar os existentes.`,
+Configuração de agentes e automação de workflows do orquestrador.
+${BASE_RULES}
+${VERBOSITY_SUPPRESSION}`,
     tools: ['readFile', 'writeFile', 'editFile', 'listWithGlob', 'mapProject']
   }
 ];

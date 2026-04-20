@@ -14,9 +14,6 @@ if (!existsSync(logDir)) {
 const serverLogFile = join(logDir, "server.log");
 const serverLog = existsSync(serverLogFile) ? serverLogFile : join(logDir, `server-${Date.now()}.log`);
 
-console.log("🚀 Iniciando OpenKore...");
-console.log(`📝 Logs do servidor em: ${serverLog}`);
-
 // Limpar log anterior
 writeFileSync(serverLog, "");
 
@@ -25,6 +22,7 @@ const server = spawn(["bun", "run", "src/index.ts"], {
   cwd: join(projectRoot, "packages/server"),
   stdout: Bun.file(serverLog),
   stderr: Bun.file(serverLog),
+  env: { ...process.env, OPENKORE_PROJECT_ROOT: process.cwd() }
 });
 
 // Aguardar o servidor subir
@@ -38,7 +36,7 @@ while (attempts < 5) {
   attempts++;
 }
 
-// Iniciar a TUI DIRETAMENTE (sem turbo) para possuir o TTY
+// Iniciar a TUI DIRETAMENTE para possuir o TTY
 const tui = spawn(["bun", "run", "src/index.tsx"], {
   cwd: join(projectRoot, "packages/tui"),
   stdout: "inherit",

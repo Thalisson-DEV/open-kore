@@ -13,8 +13,8 @@ export const createEditTool = (onConfirm: PermissionCallback) => tool({
     const action = await onConfirm({
       id: `edit-${Date.now()}`,
       tool: 'editFile',
-      input: { path },
-      diff: `- ${oldString}\n+ ${newString}`
+      input: { path, oldString, newString },
+      diff: oldString.split('\n').map(l => `- ${l}`).join('\n') + '\n' + newString.split('\n').map(l => `+ ${l}`).join('\n')
     });
 
     if (action === 'no') {

@@ -5,6 +5,8 @@ import { mkdir } from 'node:fs/promises'
 export interface AppConfig {
   provider: 'openrouter' | 'ollama'
   model: string
+  tier1Model: string // Modelo rápido (ex: Haiku, Llama 3 8B)
+  tier2Model: string // Modelo poderoso (ex: Sonnet 3.5, GPT-4o)
   theme: 'dark' | 'light'
   defaultAgent: string
   userName: string
@@ -16,6 +18,8 @@ const CONFIG_FILE = join(CONFIG_DIR, 'config.json')
 export const DEFAULT_CONFIG: AppConfig = {
   provider: 'openrouter',
   model: 'qwen/qwen-2.5-coder-32b-instruct',
+  tier1Model: 'qwen/qwen-2.5-coder-7b-instruct',
+  tier2Model: 'qwen/qwen-2.5-coder-32b-instruct',
   theme: 'dark',
   defaultAgent: 'backend',
   userName: 'usuário'
