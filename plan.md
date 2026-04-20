@@ -65,10 +65,10 @@ Qualquer dúvida de implementação: consultar `ARCHITECTURE.md`.
 - [x] **Sem tool calling ainda** — só texto
 
 ### 2.4 — Streaming na TUI
-- [ ] Criar `use-sse.ts` — consome SSE via `fetch` + `ReadableStream`, despacha evento por evento
-- [ ] Criar `Message` component — renderiza texto conforme tokens chegam
-- [ ] Criar `MessageList` — lista de mensagens com scroll automático
-- [ ] Integrar no `index.tsx`: submit do input → POST /message → SSE → re-render por token
+- [x] Criar `use-sse.ts` — consome SSE via `fetch` + `ReadableStream`, despacha evento por evento
+- [x] Criar `Message` component — renderiza texto conforme tokens chegam
+- [x] Criar `MessageList` — lista de mensagens com scroll automático
+- [x] Integrar no `index.tsx`: submit do input → POST /message → SSE → re-render por token
 
 **Verificação:** enviar "oi" via OpenRouter, texto aparece token por token na TUI.
 
@@ -79,13 +79,13 @@ Qualquer dúvida de implementação: consultar `ARCHITECTURE.md`.
 **Estado ao final:** agente lê arquivos, mapeia o projeto, executa comandos com confirmação.
 
 ### 3.1 — Tools básicas
-- [ ] Criar `tool/read.ts` — lê arquivo, retorna conteúdo
-- [ ] Criar `tool/write.ts` — escreve arquivo (dispara `permission_required`)
-- [ ] Criar `tool/edit.ts` — edita trecho (patch, não overwrite)
-- [ ] Criar `tool/bash.ts` — executa comando shell (dispara `permission_required`)
-- [ ] Criar `tool/glob.ts` — lista arquivos por padrão glob
-- [ ] Criar `tool/grep.ts` — busca regex em arquivos
-- [ ] Criar `tool/map-project.ts` — árvore de diretório filtrada, máx 200 linhas
+- [x] Criar `tool/read.ts` — lê arquivo, retorna conteúdo
+- [x] Criar `tool/write.ts` — escreve arquivo (dispara `permission_required`)
+- [x] Criar `tool/edit.ts` — edita trecho (patch, não overwrite)
+- [x] Criar `tool/bash.ts` — executa comando shell (dispara `permission_required`)
+- [x] Criar `tool/glob.ts` — lista arquivos por padrão glob
+- [x] Criar `tool/grep.ts` — busca regex em arquivos
+- [x] Criar `tool/map-project.ts` — árvore de diretório filtrada, máx 200 linhas
 
 ### 3.2 — Tool registry
 - [ ] Criar `tool/registry.ts` — mapeia nome de tool → implementação

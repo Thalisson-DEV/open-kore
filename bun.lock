@@ -18,6 +18,7 @@
         "ai": "latest",
         "ai-sdk-ollama": "^3.8.3",
         "hono": "latest",
+        "zod": "^4.3.6",
       },
     },
     "packages/tui": {

@@ -12,6 +12,7 @@
     "@ai-sdk/openai": "latest",
     "ai": "latest",
     "ai-sdk-ollama": "^3.8.3",
-    "hono": "latest"
+    "hono": "latest",
+    "zod": "^4.3.6"
   }
 }
