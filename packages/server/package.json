@@ -9,9 +9,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "hono": "latest",
-    "ai": "latest",
     "@ai-sdk/openai": "latest",
-    "ollama-ai-provider": "latest"
+    "ai": "latest",
+    "ai-sdk-ollama": "^3.8.3",
+    "hono": "latest"
   }
 }

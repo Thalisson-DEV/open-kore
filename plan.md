@@ -19,26 +19,26 @@ Qualquer dúvida de implementação: consultar `ARCHITECTURE.md`.
 **Estado ao final:** repositório estruturado, servidor Hono respondendo `/health`, TUI abrindo no terminal com status bar verde.
 
 ### 1.1 — Setup do monorepo
-- [ ] Criar `package.json` raiz com `bun workspaces: ["packages/*"]`
-- [ ] Criar `turbo.json` com tasks `dev`, `build`, `typecheck`
-- [ ] Criar `packages/server/` e `packages/tui/` com seus `package.json`
-- [ ] Configurar `tsconfig.json` em cada pacote
-- [ ] Criar script `bin/openkore.ts` que spawna o server e inicia a TUI
-- [ ] Adicionar dependências: `hono`, `ai`, `ink`, `react`, `@ai-sdk/openai`, `@ai-sdk/ollama`
+- [x] Criar `package.json` raiz com `bun workspaces: ["packages/*"]`
+- [x] Criar `turbo.json` com tasks `dev`, `build`, `typecheck`
+- [x] Criar `packages/server/` e `packages/tui/` com seus `package.json`
+- [x] Configurar `tsconfig.json` em cada pacote
+- [x] Criar script `bin/openkore.ts` que spawna o server e inicia a TUI
+- [x] Adicionar dependências: `hono`, `ai`, `ink`, `react`, `@ai-sdk/openai`, `@ai-sdk/ollama`
 
 ### 1.2 — Servidor mínimo
-- [ ] Criar `packages/server/src/index.ts` com Hono
-- [ ] Implementar `GET /health` → `{ status: "ok", version: "0.1.0" }`
-- [ ] Implementar `GET /session` → estado inicial da sessão
-- [ ] Servidor sobe em porta `8080` com log mínimo
+- [x] Criar `packages/server/src/index.ts` com Hono
+- [x] Implementar `GET /health` → `{ status: "ok", version: "0.1.0" }`
+- [x] Implementar `GET /session` → estado inicial da sessão
+- [x] Servidor sobe em porta `8080` com log mínimo
 
 ### 1.3 — Configuração e keystore
-- [ ] Criar `config.ts` — lê/escreve `~/.openkore/config.json`
-- [ ] Criar `keystore.ts` — AES-256-GCM para API keys em `~/.openkore/keys.enc`
-- [ ] Wizard de primeiro boot: detectar se config existe, se não, perguntar provider + API key + modelo
+- [x] Criar `config.ts` — lê/escreve `~/.openkore/config.json`
+- [x] Criar `keystore.ts` — AES-256-GCM para API keys em `~/.openkore/keys.enc`
+- [x] Wizard de primeiro boot: detectar se config existe, se não, perguntar provider + API key + modelo
 
 ### 1.4 — TUI mínima
-- [ ] Avaliar a documentação @interface.md e realizar as implementações contidas lá.
+- [x] Avaliar a documentação @interface.md e realizar as implementações contidas lá.
 
 **Verificação:** `bun run dev` abre a TUI com status bar verde e input funcionando.
 
@@ -49,20 +49,20 @@ Qualquer dúvida de implementação: consultar `ARCHITECTURE.md`.
 **Estado ao final:** enviar mensagem, receber resposta em streaming via OpenRouter ou Ollama.
 
 ### 2.1 — Provider OpenRouter
-- [ ] Criar `packages/server/src/provider/openrouter.ts`
-- [ ] Usar `@ai-sdk/openai` com `baseURL: "https://openrouter.ai/api/v1"`
-- [ ] `POST /provider` para trocar provider/modelo em runtime
+- [x] Criar `packages/server/src/provider/openrouter.ts`
+- [x] Usar `@ai-sdk/openai` com `baseURL: "https://openrouter.ai/api/v1"`
+- [x] `POST /provider` para trocar provider/modelo em runtime
 
 ### 2.2 — Provider Ollama
-- [ ] Criar `packages/server/src/provider/ollama.ts`
-- [ ] Usar `@ai-sdk/ollama` com `baseURL: "http://localhost:11434/api"`
-- [ ] Detectar automaticamente modelos disponíveis via `ollama list`
+- [x] Criar `packages/server/src/provider/ollama.ts`
+- [x] Usar `@ai-sdk/ollama` com `baseURL: "http://localhost:11434/api"`
+- [x] Detectar automaticamente modelos disponíveis via `ollama list`
 
 ### 2.3 — Endpoint de mensagem com SSE
-- [ ] Criar `POST /message` em Hono com resposta SSE
-- [ ] Usar `streamText` do Vercel AI SDK
-- [ ] Emitir eventos tipados: `text`, `finish`, `error`
-- [ ] **Sem tool calling ainda** — só texto
+- [x] Criar `POST /message` em Hono com resposta SSE
+- [x] Usar `streamText` do Vercel AI SDK
+- [x] Emitir eventos tipados: `text`, `finish`, `error`
+- [x] **Sem tool calling ainda** — só texto
 
 ### 2.4 — Streaming na TUI
 - [ ] Criar `use-sse.ts` — consome SSE via `fetch` + `ReadableStream`, despacha evento por evento

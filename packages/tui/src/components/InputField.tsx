@@ -38,15 +38,15 @@ export const InputField: React.FC<InputFieldProps> = ({ onSubmit }) => {
     <Box 
       flexDirection="column" 
       paddingX={1} 
-      paddingY={0}
+      paddingY={1}
       width="100%"
     >
       <Box 
-        borderStyle="round" 
-        borderColor={isFocused ? "#7a9e7a" : "#3A3A3A"}
-        paddingX={1}
+        backgroundColor="#111111"
+        paddingX={2}
+        paddingY={1}
       >
-        <Text color={isFocused ? "#7a9e7a" : "#666666"}>› </Text>
+        <Text color="#7a9e7a">› </Text>
         <TextInput
           focus={isFocused}
           value={value}

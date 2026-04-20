@@ -3,6 +3,9 @@ import { render, Box, Text } from 'ink'
 import { StatusBar } from './components/StatusBar'
 import { InputField } from './components/InputField'
 import { SetupWizard } from './components/SetupWizard'
+import { Home } from './components/Home'
+import { MessageList } from './components/MessageList'
+import { useSSE } from './hooks/use-sse'
 
 interface SessionState {
   agent: string
@@ -14,6 +17,9 @@ const App = () => {
   const [session, setSession] = useState<SessionState | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [terminalRows, setTerminalRows] = useState(process.stdout.rows || 24)
+  const [view, setView] = useState<'home' | 'chat'>('home')
+
+  const { messages, isStreaming, sendMessage } = useSSE()
 
   const fetchSession = async () => {
     try {
@@ -44,6 +50,13 @@ const App = () => {
       process.stdout.off('resize', handleResize)
     }
   }, [])
+
+  const handleStart = (query: string) => {
+    if (query.trim()) {
+      setView('chat')
+      sendMessage(query)
+    }
+  }
 
   if (error && !session) {
     return (
@@ -86,33 +99,53 @@ const App = () => {
     )
   }
 
+  if (view === 'home') {
+    return (
+      <Box flexDirection="column" height={terminalRows} backgroundColor="#0A0A0A">
+        <Home model={session.model} onStart={handleStart} />
+        <StatusBar 
+          agent={session.agent} 
+          model={session.model} 
+          status={session.status} 
+        />
+      </Box>
+    )
+  }
+
   return (
     <Box 
       flexDirection="column" 
       height={terminalRows} 
       backgroundColor="#0A0A0A"
     >
-      {/* Header (Sessão + Modelo) - Simplificado por agora */}
-      <Box paddingX={1} paddingTop={1}>
-        <Text color="#666666">● </Text>
-        <Text color="#E0E0E0" bold>OpenKore</Text>
-        <Text color="#3A3A3A">  SIPEL-CES  </Text>
+      {/* Header (Sessão + Modelo) */}
+      <Box paddingX={1} paddingTop={1} flexDirection="row" justifyContent="space-between">
+        <Box>
+          <Text color="#666666">● </Text>
+          <Text color="#E0E0E0" bold>OpenKore</Text>
+          <Text color="#3A3A3A">  SIPEL-CES  </Text>
+        </Box>
         <Text color="#666666">{session.model}</Text>
       </Box>
 
       {/* Message List Area */}
-      <Box flexGrow={1} flexDirection="column" paddingX={1} marginTop={1}>
-        <Text color="#666666">Aguardando comandos...</Text>
+      <Box flexGrow={1} flexDirection="column">
+        <MessageList messages={messages} />
+      </Box>
+
+      {/* Input Separator */}
+      <Box paddingX={1}>
+        <Text color="#3A3A3A">{"─".repeat(process.stdout.columns - 2)}</Text>
       </Box>
 
       {/* Input Area */}
-      <InputField onSubmit={(val) => console.log('Submit:', val)} />
+      <InputField onSubmit={sendMessage} />
 
       {/* Global Status Bar (Footer) */}
       <StatusBar 
         agent={session.agent} 
         model={session.model} 
-        status={session.status} 
+        status={isStreaming ? 'busy' : session.status} 
       />
     </Box>
   )

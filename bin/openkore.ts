@@ -1,23 +1,45 @@
 #!/usr/bin/env bun
 import { spawn } from "bun";
 import { join } from "path";
+import { existsSync, mkdirSync, writeFileSync } from "fs";
+import { homedir } from "os";
 
 const projectRoot = join(import.meta.dir, "..");
+const logDir = join(homedir(), ".openkore", "logs");
+
+if (!existsSync(logDir)) {
+  mkdirSync(logDir, { recursive: true });
+}
+
+const serverLogFile = join(logDir, "server.log");
+const serverLog = existsSync(serverLogFile) ? serverLogFile : join(logDir, `server-${Date.now()}.log`);
 
 console.log("🚀 Iniciando OpenKore...");
+console.log(`📝 Logs do servidor em: ${serverLog}`);
 
-// Iniciar o servidor em background
-const server = spawn(["bun", "run", "dev"], {
+// Limpar log anterior
+writeFileSync(serverLog, "");
+
+// Iniciar o servidor em background redirecionando logs
+const server = spawn(["bun", "run", "src/index.ts"], {
   cwd: join(projectRoot, "packages/server"),
-  stdout: "inherit",
-  stderr: "inherit",
+  stdout: Bun.file(serverLog),
+  stderr: Bun.file(serverLog),
 });
 
-// Aguardar um pouco para o servidor subir (simplificado por enquanto)
-await new Promise(resolve => setTimeout(resolve, 1000));
+// Aguardar o servidor subir
+let attempts = 0;
+while (attempts < 5) {
+  try {
+    const res = await fetch("http://localhost:8080/health");
+    if (res.ok) break;
+  } catch (e) {}
+  await new Promise(r => setTimeout(r, 500));
+  attempts++;
+}
 
-// Iniciar a TUI
-const tui = spawn(["bun", "run", "dev"], {
+// Iniciar a TUI DIRETAMENTE (sem turbo) para possuir o TTY
+const tui = spawn(["bun", "run", "src/index.tsx"], {
   cwd: join(projectRoot, "packages/tui"),
   stdout: "inherit",
   stderr: "inherit",
@@ -30,3 +52,10 @@ process.on("SIGINT", () => {
   tui.kill();
   process.exit();
 });
+
+// Se a TUI fechar, fecha o servidor também
+(async () => {
+  await tui.exited;
+  server.kill();
+  process.exit();
+})();

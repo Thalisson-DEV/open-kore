@@ -19,6 +19,7 @@
 10. [Componentes e Interações](#componentes-e-interações)
 11. [Barra de Status Global](#barra-de-status-global)
 12. [Temas e Personalização](#temas-e-personalização)
+13. [Plano de Implementação por Fases](#plano-de-implementação-por-fases)
 
 ---
 
@@ -53,6 +54,8 @@ TOKEN                    VALOR HEX    ANSI     USO
 --color-diff-add         #1C361C      —        Background de linhas adicionadas
 --color-diff-rem         #3A1A1A      —        Background de linhas removidas
 ```
+
+> **Nota sobre ANSI:** `--color-accent` usa `#7a9e7a` (verde-sálvia) e não possui mapeamento ANSI preciso. Em terminais true-color o valor hex é usado diretamente. Em terminais sem suporte, definir fallback manualmente no tema.
 
 **Spinners e animadores:** `⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏` (Braille, 80ms/frame)
 
@@ -162,7 +165,7 @@ Layout split-pane. Painel principal à esquerda, sidebar de metadados à direita
 │   │  +   private readonly context: SessionContext;                 │ │ ! shell inline             │
 │   │  +   constructor(ctx: SessionContext) {                        │ │ /diff ver mudanças         │
 │   │  -   // TODO: implementar                                      │ │ Ctrl+C parar agente        │
-│   │  └────────────────────────────────────────────────────────────┘ │                            │
+│   └────────────────────────────────────────────────────────────────┘ │                            │
 │                                                                      │                            │
 │ A estrutura preliminar foi criada. A documentação está sendo         │                            │
 │ gerada em background. O padrão adotado separa responsabilidades      │                            │
@@ -202,15 +205,15 @@ Esta é a seção central do design. Cada iteração do agente é renderizada co
 
 **Ferramentas reconhecidas e seus ícones:**
 
-| Ferramenta      | Ícone | Renderização especial                         |
-|----------------|-------|-----------------------------------------------|
-| `read_file`    | 📖    | Nome do arquivo + primeiras linhas (colapsado)|
-| `write_file`   | 📄    | Diff inline (+/- linhas coloridas)            |
-| `bash`         | 💻    | Bloco de código com output (scrollável)       |
-| `search_files` | 🔍    | Lista de matches com contexto                 |
-| `list_files`   | 📁    | Árvore de diretório compacta                  |
-| `fetch_url`    | 🌐    | URL + status HTTP + resumo de conteúdo        |
-| `agent_spawn`  | 🤖    | Sub-agente lançado + ID de thread             |
+| Ferramenta      | Ícone | Renderização especial                          |
+|----------------|-------|------------------------------------------------|
+| `read_file`    | 📖    | Nome do arquivo + primeiras linhas (colapsado) |
+| `write_file`   | 📄    | Diff inline (+/- linhas coloridas)             |
+| `bash`         | 💻    | Bloco de código com output (scrollável)        |
+| `search_files` | 🔍    | Lista de matches com contexto                  |
+| `list_files`   | 📁    | Árvore de diretório compacta                   |
+| `fetch_url`    | 🌐    | URL + status HTTP + resumo de conteúdo         |
+| `agent_spawn`  | 🤖    | Sub-agente lançado + ID de thread              |
 
 ### 6.2 Sequência de Micro-iterações
 
@@ -371,7 +374,7 @@ Digitados diretamente no input. Autocomplete fuzzy ativado após `/`.
 
 ### 8.2 Paleta de Comandos (Command Palette)
 
-Ativada por `Ctrl+X H` ou `/help`. Busca fuzzy em todos os 60+ comandos registrados.
+Ativada por `Ctrl+X H` ou `/help`. Busca fuzzy em todos os comandos registrados.
 
 ```
 ╭─ Paleta de Comandos ──────────────────────────────────────────────╮
@@ -558,7 +561,7 @@ Fixada no rodapé. Atualiza em tempo real.
 
 ```jsonc
 {
-  "theme": "openkore-olive",      // tema padrão
+  "theme": "openkore-sage",       // tema padrão
   "scroll_speed": 3,
   "scroll_acceleration": {
     "enabled": true               // aceleração estilo macOS
@@ -587,14 +590,661 @@ OPENKORE_TUI_CONFIG=~/.config/openkore/tui.json
 
 ### Temas Disponíveis
 
-| Tema                | Descrição                                   |
-|--------------------|---------------------------------------------|
-| `openkore-olive`   | Padrão. Verde oliva + fundo preto profundo  |
-| `openkore-mono`    | Monocromático cinza, sem cores de destaque  |
-| `openkore-dawn`    | Modo claro com acentos âmbar               |
+| Tema               | Descrição                                    |
+|--------------------|----------------------------------------------|
+| `openkore-sage`    | Padrão. Verde-sálvia #7a9e7a + fundo #0A0A0A |
+| `openkore-mono`    | Monocromático cinza, sem cores de destaque   |
+| `openkore-dawn`    | Modo claro com acentos âmbar                 |
 
-Temas personalizados seguem o schema de tokens CSS definido em [Paleta de Cores](#paleta-de-cores-e-tokens-visuais). Basta criar `~/.config/openkore/themes/meutema.json` com os overrides desejados.
+Temas personalizados seguem o schema de tokens definido em [Paleta de Cores](#paleta-de-cores-e-tokens-visuais). Basta criar `~/.config/openkore/themes/meutema.json` com os overrides desejados.
 
 ---
 
-*OpenKore TUI Design Spec — v0.1.0*
+## Plano de Implementação por Fases
+
+A TUI é construída em 6 fases incrementais. Cada fase entrega uma camada funcional e visualmente verificável, sobre a qual a próxima se apoia. Campos ainda sem dados reais devem usar **mocks explicitamente marcados** com o comentário `// [MOCK]` no código e sufixo visual `[M]` em modo `NODE_ENV=development`, para facilitar identificação e substituição futura.
+
+```
+Fase 1  →  Layout root + StatusBar + InputField
+Fase 2  →  MessageList + identificadores + thinking
+Fase 3  →  ToolBlock + micro-iterações + diff
+Fase 4  →  Sidebar (todas as seções)
+Fase 5  →  Autocomplete fuzzy + slash commands
+Fase 6  →  Toasts + modais + aprovações + polimento final
+```
+
+---
+
+### Fase 1 — Fundação: Layout Root, StatusBar e InputField
+
+**Objetivo:** Estabelecer o esqueleto estrutural da TUI. Ao final desta fase, o terminal exibe o fundo correto, uma barra de status ancorada no rodapé e uma caixa de entrada funcional com as cores da paleta.
+
+**Escopo:**
+
+| Inclui | Não inclui |
+|--------|------------|
+| Layout root com `flexDirection: column` e altura total | Renderização de mensagens |
+| StatusBar ancorada no rodapé | Sidebar |
+| InputField com borda arredondada em `--color-accent` | Autocomplete |
+| Relógio HH:MM atualizado por `setInterval` | Integração com backend real |
+| Histórico de comandos `↑/↓` | Blocos de ferramenta |
+
+**Arquivos envolvidos:**
+```
+packages/tui/src/index.tsx
+packages/tui/src/components/StatusBar.tsx
+packages/tui/src/components/InputField.tsx
+```
+
+**`index.tsx` — Layout Root**
+
+- Componente `App` com `<Box flexDirection="column" minHeight={process.stdout.rows || 24} backgroundColor="#0A0A0A">`
+- Filhos em ordem vertical: `<Header />` (stub vazio), `<MessageList />` (stub com `flexGrow={1}`), `<InputField />`, `<StatusBar />`
+- O `flexGrow={1}` no `MessageList` garante que `InputField` e `StatusBar` grudem no rodapé independente do conteúdo
+
+**`StatusBar.tsx` — Barra de Status Global**
+
+- Wrapper: `<Box flexDirection="row" backgroundColor="#111111" paddingX={1}>`
+- Slots em ordem, separados por `·` ou `|` em `--color-fg-muted`:
+  1. Indicador `🟢` + `OpenKore v1.0.0-beta`
+  2. Workspace: `SIPEL-CES` [MOCK]
+  3. Agente ativo: `Kore-Alpha` [MOCK]
+  4. Contagem: `0 tools` [MOCK]
+  5. Relógio: estado local React, `setInterval` a cada 1000ms, formato `HH:MM`
+  6. Hint: `(Ctrl+X) Menu` em `--color-fg-dim`
+- Preparar prop `status: 'online' | 'loading' | 'error' | 'offline'` tipada mas hardcoded como `'online'` por ora
+
+**`InputField.tsx` — Caixa de Entrada**
+
+- Wrapper: `<Box borderStyle="round" borderColor={value === '' ? '#3A3A3A' : '#7a9e7a'}>`
+- Prefixo `> ` como `<Text color="#7a9e7a">{">"} </Text>` antes do `<TextInput>` do `ink-text-input`
+- Estado local: `value: string`, `history: string[]`, `historyIndex: number`
+- `↑` decrementa `historyIndex` e carrega entrada anterior; `↓` avança; `Enter` empurra para `history` e reseta `value` e `historyIndex`
+- `onSubmit` recebe o texto e dispara callback prop para `index.tsx`
+
+**Verificação:**
+```bash
+bun run dev
+```
+- [ ] Fundo `#0A0A0A` ocupa todo o terminal
+- [ ] StatusBar no rodapé com todos os slots visíveis
+- [ ] Relógio atualiza a cada minuto sem rerender da tela inteira
+- [ ] InputField logo acima da StatusBar com borda arredondada
+- [ ] Borda muda de `#3A3A3A` (idle) para `#7a9e7a` (digitando)
+- [ ] `↑/↓` navega histórico; `Enter` limpa o campo e empurra para histórico
+
+---
+
+### Fase 2 — Painel de Mensagens e Identificadores
+
+**Objetivo:** Substituir o stub `MessageList` por renderização real de mensagens com identidade visual, timestamps opcionais e área de thinking colapsável.
+
+**Escopo:**
+
+| Inclui | Não inclui |
+|--------|------------|
+| Componente `MessageList` scrollável | Blocos de ferramenta (Fase 3) |
+| Identificadores `[Usuário]` e `[OpenKore]` em `--color-accent` + negrito | Integração SSE real |
+| Área de thinking em `--color-fg-dim` + itálico, recuada 2 espaços | Sidebar (Fase 4) |
+| Timestamps opcionais `HH:MM` por mensagem | Diff inline |
+| Scroll: `PgUp/PgDown`, `Ctrl+U/D`, `G/gg` | |
+| Auto-scroll para o fim ao receber nova mensagem | |
+| Spinner `⠹` ao lado do label durante streaming | |
+
+**Arquivos envolvidos:**
+```
+packages/tui/src/components/MessageList.tsx   ← novo
+packages/tui/src/components/Message.tsx        ← novo
+packages/tui/src/components/ThinkingBlock.tsx  ← novo
+packages/tui/src/types/message.ts              ← novo
+```
+
+**`types/message.ts`**
+```typescript
+type MessageRole = 'user' | 'assistant'
+
+interface ThinkingStep {
+  text: string
+}
+
+interface Message {
+  id: string
+  role: MessageRole
+  content: string
+  thinking?: ThinkingStep[]
+  timestamp: Date
+  isStreaming?: boolean
+}
+```
+
+**`Message.tsx`**
+- `role === 'user'`: label `[Usuário]` em `--color-accent` bold; texto em `--color-fg`
+- `role === 'assistant'` + `isStreaming`: label `[OpenKore]` + spinner `⠹` animado (Braille 80ms) ao lado
+- `role === 'assistant'` + concluído: label `[OpenKore]` sem spinner
+- Timestamp à direita do label se prop `showTimestamps` ativo, em `--color-fg-dim`
+- Conteúdo com suporte básico a Markdown: `**negrito**`, `*itálico*`, `` `código` ``
+
+**`ThinkingBlock.tsx`**
+- Cada etapa renderizada como `  > texto` em `--color-fg-dim` itálico, recuo 2 espaços
+- Exibido entre o label e o conteúdo final da mensagem
+- Expandido automaticamente durante `isStreaming`; colapsado após conclusão
+- `Ctrl+Z` na mensagem em foco alterna colapso/expansão
+
+**`MessageList.tsx`**
+- Lista scrollável de `<Message>` com overflow interno
+- Estado: `messages: Message[]`, `scrollOffset: number`
+- Keybinds locais: `PgUp/PgDown` (3 linhas), `Ctrl+U/Ctrl+D` (meia tela), `G` (ir ao fim), `gg` (ir ao início)
+- Auto-scroll: se `scrollOffset === 0` (usuário está no fundo), nova mensagem mantém o fundo visível. Se rolou para cima, não força.
+
+**Mocks para desenvolvimento:**
+```typescript
+// index.tsx
+const MOCK_MESSAGES: Message[] = [
+  {
+    id: '1', role: 'user',
+    content: 'Inicie a estruturação do módulo C.E.S.',
+    timestamp: new Date()
+  },
+  {
+    id: '2', role: 'assistant',
+    thinking: [
+      { text: 'Analisando dependências e padrões do projeto...' },
+      { text: 'Ativando agente de arquitetura de software...' }
+    ],
+    content: 'A estrutura preliminar foi criada com sucesso.',
+    timestamp: new Date()
+  }
+]
+```
+
+**Verificação:**
+- [ ] Mensagens com labels coloridos e em negrito
+- [ ] Etapas de thinking visíveis em cinza/itálico recuadas
+- [ ] Spinner animado no label durante `isStreaming`
+- [ ] Scroll funciona com todas as teclas mapeadas
+- [ ] Auto-scroll ativo ao receber nova mensagem quando já no fundo
+- [ ] Timestamps visíveis/ocultos conforme `showTimestamps`
+
+---
+
+### Fase 3 — Blocos de Ferramenta e Micro-iterações
+
+**Objetivo:** Implementar o componente central de visualização do loop de agente. Cada chamada de ferramenta é um bloco inline renderizado progressivamente dentro do fluxo de mensagens, com spinner durante execução, duração ao concluir e diff colorido para escrita de arquivos.
+
+**Escopo:**
+
+| Inclui | Não inclui |
+|--------|------------|
+| Componente `ToolBlock` com spinner, duração e status | Aprovações inline (Fase 6) |
+| Renderização específica por tipo de ferramenta | Integração real com o backend |
+| `DiffView` para `write_file` com linhas `+/-` coloridas | |
+| `BashOutput` com scroll interno e truncamento | |
+| Contador de iterações na StatusBar | |
+| Colapse/expanda com `Ctrl+Z` | |
+
+**Arquivos envolvidos:**
+```
+packages/tui/src/components/ToolBlock.tsx
+packages/tui/src/components/tools/DiffView.tsx
+packages/tui/src/components/tools/BashOutput.tsx
+packages/tui/src/types/tool.ts
+```
+
+**`types/tool.ts`**
+```typescript
+type ToolStatus = 'running' | 'success' | 'error' | 'cancelled'
+
+interface ToolCall {
+  id: string
+  name: string
+  input: Record<string, unknown>
+  output?: string
+  status: ToolStatus
+  durationMs?: number
+  startedAt: Date
+}
+```
+
+**`ToolBlock.tsx` — Estrutura base**
+
+Layout:
+```
+┌─ <ícone> tool: <nome> ─────────── <duração|spinner> <status> ──┐
+│  <conteúdo específico da ferramenta>                           │
+└────────────────────────────────────────────────────────────────┘
+```
+
+- Borda externa em `--color-fg-muted`; texto do header em `--color-accent-dim`
+- `status === 'running'`: spinner Braille 80ms no lugar da duração; borda pulsa em `--color-accent-dim`
+- `status === 'success'`: duração em `--color-success` + `✓`
+- `status === 'error'`: `✗` em `--color-error`; conteúdo expande para mostrar mensagem de erro
+- `status === 'cancelled'`: `⊘ cancelada` em `--color-fg-dim`
+- Estado colapsado por padrão após conclusão; expandido durante execução
+- `Ctrl+Z` na mensagem em foco alterna colapso de todos os blocos da mensagem
+
+Mapeamento de ícones por `name`:
+```typescript
+const TOOL_ICONS: Record<string, string> = {
+  read_file: '📖', write_file: '📄', bash: '💻',
+  search_files: '🔍', list_files: '📁', fetch_url: '🌐', agent_spawn: '🤖'
+}
+```
+
+**`DiffView.tsx` — Para `write_file`**
+- Recebe `patch: string` em formato unidiff padrão
+- Linha `+`: `backgroundColor="#1C361C"`, texto em `--color-success`
+- Linha `-`: `backgroundColor="#3A1A1A"`, texto em `--color-error`
+- Linha de contexto: texto em `--color-fg-dim`
+- Header `@@ ... @@`: texto em `--color-info`
+
+**`BashOutput.tsx` — Para `bash`**
+- Linha de comando: `$ <cmd>` em `--color-accent`
+- Output com scroll interno; máximo 10 linhas visíveis por padrão
+- `↑/↓` rola dentro do bloco quando em foco
+- Output longo truncado: `... (N linhas ocultas — Ctrl+Z para expandir)`
+
+**Integração com `Message.tsx`**
+- `Message` passa a aceitar `toolCalls?: ToolCall[]`
+- `ToolBlock`s renderizados entre `ThinkingBlock` e o conteúdo final
+- `StatusBar` exibe durante execução: `⠸ iteração N/N · tools: X · +Y tokens` [contadores parcialmente MOCK]
+
+**Mocks para desenvolvimento:**
+```typescript
+const MOCK_TOOL_CALLS: ToolCall[] = [
+  {
+    id: 't1', name: 'read_file',
+    input: { path: 'src/ces/module.ts' },
+    output: '// conteúdo do arquivo...',
+    status: 'success', durationMs: 120, startedAt: new Date()
+  },
+  {
+    id: 't2', name: 'bash',
+    input: { command: 'npx tsc --noEmit' },
+    output: '✓ Compilação sem erros',
+    status: 'success', durationMs: 445, startedAt: new Date()
+  },
+  {
+    id: 't3', name: 'write_file',
+    input: { path: 'src/ces/module.ts' },
+    output: '@@ -1,3 +1,10 @@\n+import { IStrategy } from \'./interfaces\';\n-// TODO',
+    status: 'running', startedAt: new Date()
+  }
+]
+```
+
+**Verificação:**
+- [ ] Blocos renderizados inline dentro do fluxo de mensagens
+- [ ] Spinner animado em `running`; duração verde + `✓` em `success`; vermelho + `✗` em `error`
+- [ ] Diff com cores corretas para linhas `+` e `-`
+- [ ] Output de bash scrollável internamente com truncamento
+- [ ] `Ctrl+Z` na mensagem colapsa/expande todos os seus blocos
+- [ ] StatusBar exibe contador de iteração durante execução
+
+---
+
+### Fase 4 — Sidebar de Contexto e Metadados
+
+**Objetivo:** Implementar o painel lateral direito com todas as seções de metadados. Toda seção pode iniciar com dados mockados; a estrutura de componentes deve estar pronta para receber dados reais via props sem refatoração.
+
+**Escopo:**
+
+| Inclui | Não inclui |
+|--------|------------|
+| Componente `Sidebar` com seções em coluna | Integração com API real de tokens/custo |
+| Seção: Contexto da Sessão | Lógica real de LSP |
+| Seção: Agentes Ativos com barra de progresso | |
+| Seção: Arquivos Tocados com legenda `+/~/−/R` | |
+| Seção: LSP / MCP Status | |
+| Seção: Tarefas/TODOs | |
+| Seção: Dicas contextuais (estáticas nesta fase) | |
+| Toggle `Ctrl+X B` | |
+| Auto-colapso em terminais < 100 colunas | |
+
+**Arquivos envolvidos:**
+```
+packages/tui/src/components/Sidebar.tsx
+packages/tui/src/components/sidebar/SessionInfo.tsx
+packages/tui/src/components/sidebar/AgentStatus.tsx
+packages/tui/src/components/sidebar/FilesTouched.tsx
+packages/tui/src/components/sidebar/LspStatus.tsx
+packages/tui/src/components/sidebar/TodoList.tsx
+packages/tui/src/components/sidebar/Tips.tsx
+```
+
+**`Sidebar.tsx` — Container**
+- `<Box flexDirection="column" width={32} borderLeft borderColor="--color-fg-muted">`
+- Prop `visible: boolean` — quando `false`, renderiza `<Box width={0} />` sem reflow do chat
+- Detecta `process.stdout.columns < 100` e força `visible = false` automaticamente
+- Cada seção tem título em `--color-accent` bold e separador `──────────` em `--color-fg-muted`
+
+**`SessionInfo.tsx`**
+```
+⚙ CONTEXTO DA SESSÃO
+──────────────────────
+Tokens:  14.520 / 120k     ← [MOCK]
+Uso:  12%  [██░░░░░░░░]    ← barra dinâmica
+Custo:  $0.024             ← [MOCK]
+Sessão: #a3f2c1            ← [MOCK]
+Duração: 00:04:32          ← timer real via setInterval
+```
+- Barra de uso: `Math.round(percent / 10)` blocos `█` + restante `░`, total 10 blocos
+- Cor da barra: `--color-success` abaixo de 80%, `--color-warning` entre 80-95%, `--color-error` acima de 95%
+- Timer de duração com `setInterval` a cada segundo
+
+**`AgentStatus.tsx`**
+```
+🤖 AGENTES ATIVOS
+──────────────────────
+⠹ Arquiteto    45%  [████░░]
+○  Revisor       0%  [      ]
+⠸ Engenheiro   15%  [█░░░░░]
+```
+- Barra de 6 blocos `█/░` proporcional ao percentual
+- Spinner animado ao lado do nome quando `status === 'active'`; `○` quando idle
+
+**`FilesTouched.tsx`**
+```
+📎 ARQUIVOS TOCADOS
+──────────────────────
+src/ces/module.ts     ~
+src/ces/index.ts      +
+```
+- Status colorido: `+` em `--color-success`, `~` em `--color-warning`, `-` em `--color-error`, `R` em `--color-info`
+- Path longo truncado com `…` para caber na largura da sidebar (32 cols)
+- Contador `(N arquivo(s))` ao final da lista
+
+**`LspStatus.tsx`**
+```
+🔌 LSP / MCP STATUS
+──────────────────────
+✓ TypeScript LSP  ativo
+✓ eslint-mcp      ativo
+○ prettier-mcp    ocioso
+```
+- `✓` em `--color-success`; `○` em `--color-fg-dim`; `✗` em `--color-error`
+- Dados [MOCK] nesta fase; interface tipada pronta para integração
+
+**`TodoList.tsx`**
+```
+📋 TAREFAS (TODOS)
+──────────────────────
+✓ Criar scaffolding CES
+⠸ Gerar documentação
+○ Revisar contratos API
+```
+- `✓` concluído em `--color-success`; spinner em andamento; `○` pendente em `--color-fg-dim`
+- Dados [MOCK]; gerado pelo agente em versões futuras
+
+**`Tips.tsx`**
+- Array de 4 dicas hardcoded nesta fase
+- Rotação dinâmica por contexto implementada na Fase 6
+
+**Integração em `index.tsx`:**
+```tsx
+<Box flexDirection="row" flexGrow={1}>
+  <MessageList flexGrow={1} />
+  <Sidebar visible={sidebarVisible} />
+</Box>
+```
+
+**Verificação:**
+- [ ] Sidebar visível à direita com todas as 6 seções
+- [ ] `Ctrl+X B` colapsa e expande sem reflow do chat
+- [ ] Terminal < 100 colunas colapsa automaticamente
+- [ ] Barra de uso muda de cor conforme percentual
+- [ ] Timer de duração atualiza a cada segundo
+- [ ] Paths longos truncados com `…`
+
+---
+
+### Fase 5 — Autocomplete Fuzzy e Sistema de Comandos
+
+**Objetivo:** Implementar o autocomplete ativado por `@`, `!` e `/`, o sistema de slash commands com paleta fuzzy e a conversão automática de paste longo em anexo colapsado.
+
+**Escopo:**
+
+| Inclui | Não inclui |
+|--------|------------|
+| Dropdown de autocomplete acima do `InputField` | Integração com sistema de arquivos real |
+| Fuzzy search por `@` (arquivos), `!` (histórico shell), `/` (comandos) | Frecency persistida em disco |
+| Ranking por frecency em memória | |
+| Paleta de comandos `Ctrl+X H` com busca fuzzy | |
+| Slash commands: `/new`, `/clear`, `/model`, `/help`, `/diff` | |
+| Conversão automática de paste longo em anexo | |
+
+**Arquivos envolvidos:**
+```
+packages/tui/src/components/Autocomplete.tsx
+packages/tui/src/components/CommandPalette.tsx
+packages/tui/src/hooks/useFuzzySearch.ts
+packages/tui/src/hooks/useFrecency.ts
+packages/tui/src/commands/registry.ts
+```
+
+**`useFuzzySearch.ts`**
+- Recebe `items: string[]` e `query: string`
+- Retorna itens ranqueados com score de similaridade (implementar manualmente ou usar `fuzzysort`)
+- Retorna também `highlights: number[][]` — índices dos chars que fizeram match, para renderização em `--color-accent`
+
+**`useFrecency.ts`**
+- Estado em memória: `Map<string, { uses: number, lastUsed: Date }>`
+- `record(item: string)` → incrementa uso e atualiza timestamp
+- `sort(items: string[])` → ordena por `uses * recencyDecay` onde `recencyDecay` decresce com a idade
+
+**`Autocomplete.tsx`**
+- Renderizado acima do `InputField`, posicionado pelo layout do container
+- Detecção de trigger no valor do input:
+  - `@<query>` → lista `MOCK_FILES` filtrada por fuzzy
+  - `!<query>` → lista histórico de comandos bash da sessão atual
+  - `/<query>` → lista slash commands do registro
+- Navegação: `↑/↓` move seleção; `Tab` ou `Enter` confirma e insere no input; `Esc` fecha sem inserir
+- Máximo 5 itens visíveis; scroll interno se mais resultados
+- Item selecionado: `▶` em `--color-accent`; itens normais em `--color-fg-dim`
+
+```
+╭─ Arquivos ────────────────────────────────────────────╮
+│  ▶ src/ces/module.ts                      (recente)   │
+│    src/ces/index.ts                                   │
+│    src/strategy/BaseStrategy.ts                       │
+╰───────────────────────────────────────────────────────╯
+```
+
+**`registry.ts` — Registro de Comandos**
+```typescript
+interface Command {
+  name: string
+  description: string
+  keybind?: string
+  handler: (args?: string) => void
+}
+
+const commands: Command[] = []
+
+export const registerCommand = (cmd: Command) => commands.push(cmd)
+export const getCommands = (query: string): Command[] =>
+  fuzzySearch(commands.map(c => c.name), query)
+    .map(name => commands.find(c => c.name === name)!)
+```
+
+**`CommandPalette.tsx`**
+- Modal overlay centralizado, ativado por `Ctrl+X H`
+- Campo de busca próprio no topo com borda `--color-accent`
+- Lista de comandos filtrada em tempo real por `useFuzzySearch`
+- Cada item: `/nome`, descrição em `--color-fg-dim`, keybind em `--color-info`
+- `Enter` executa o comando selecionado e fecha; `Esc` fecha sem executar
+
+**Paste longo:**
+- Em `InputField`, detectar paste (texto com `\n` e > 3 linhas, ou > 150 chars)
+- Converter para `<Attachment filename="paste-{timestamp}.txt" lines={N} collapsed />`
+- Conteúdo completo enviado no contexto ao backend; UI exibe apenas o resumo colapsado
+- Hint: `Ctrl+Z para expandir` ao lado do anexo
+
+**Mocks de arquivos:**
+```typescript
+// [MOCK] substituir por leitura real do workspace
+const MOCK_FILES = [
+  'src/ces/module.ts', 'src/ces/index.ts',
+  'src/strategy/BaseStrategy.ts', 'package.json',
+  'tsconfig.json', 'docs/CES_MODULE.md'
+]
+```
+
+**Verificação:**
+- [ ] `@` abre dropdown com fuzzy search de arquivos
+- [ ] `!` abre dropdown com histórico de comandos bash da sessão
+- [ ] `/` abre dropdown com slash commands disponíveis
+- [ ] `Tab` confirma; `Esc` fecha sem inserir
+- [ ] `Ctrl+X H` abre paleta de comandos com busca
+- [ ] `/clear` limpa mensagens; `/new` reseta sessão
+- [ ] Comandos não implementados exibem toast `⚡ em breve`
+- [ ] Paste de 4+ linhas vira anexo colapsado com contagem de linhas
+
+---
+
+### Fase 6 — Toasts, Modais, Aprovações e Polimento Final
+
+**Objetivo:** Implementar os sistemas de notificação temporária, diálogos modais, aprovações inline de ferramentas destrutivas e aplicar polimento visual em toda a TUI. Esta fase encerra o ciclo de desenvolvimento da interface base.
+
+**Escopo:**
+
+| Inclui | Não inclui |
+|--------|------------|
+| Sistema de Toast (topo, temporário) | Integração com backend de sessões reais |
+| Modal base + `DialogModel` + `DialogSessions` | |
+| Aprovação inline de ferramentas destrutivas | |
+| `usePermissions` — aprovações por sessão | |
+| Header completo (estado + workspace + modelo) | |
+| Dicas contextuais dinâmicas na Sidebar | |
+| `Ctrl+C` duplo com debounce para encerrar agente | |
+| Polimento: consistência de cores, sem flickering | |
+
+**Arquivos envolvidos:**
+```
+packages/tui/src/components/Toast.tsx
+packages/tui/src/components/ToastContainer.tsx
+packages/tui/src/components/Modal.tsx
+packages/tui/src/components/ToolApproval.tsx
+packages/tui/src/components/Header.tsx
+packages/tui/src/hooks/useToast.ts
+packages/tui/src/hooks/usePermissions.ts
+```
+
+**`useToast.ts` + `ToastContainer.tsx`**
+```typescript
+interface Toast {
+  id: string
+  message: string
+  type: 'success' | 'error' | 'info'
+  duration: number  // ms; 0 = persistente até interação
+}
+```
+- `showToast(message, type, duration?)` adiciona; remove automaticamente após `duration` ms (padrão 3000)
+- Toasts `error` com `duration: 0` — persistem até `Esc` ou clique
+- `ToastContainer` renderizado no topo absoluto, toasts empilhados verticalmente
+- Novo toast empurra o anterior para baixo (máximo 3 simultâneos; mais antigo descartado)
+
+```
+╭── ✓ Arquivo salvo: docs/CES_MODULE.md ──────────────────────────╮
+╰──────────────────────────────────────────────────────────────────╯
+```
+
+**`Modal.tsx` — Base de diálogos**
+- `<Box borderStyle="round" borderColor="#7a9e7a">` centralizado com overlay semitransparente
+- Props: `title: string`, `children: ReactNode`, `onClose: () => void`
+- `Esc` fecha qualquer modal aberto
+- Exporta contexto `ModalContext` para abertura programática
+
+**`DialogModel.tsx`**
+- Abre via `Ctrl+X M` ou `/model`
+- Campo de busca fuzzy interno; lista de modelos filtrada em tempo real
+- `Enter` seleciona e fecha; dispara toast `✓ Modelo alterado: <nome>`
+- Dados [MOCK] nesta fase
+
+**`ToolApproval.tsx` — Aprovação inline**
+- Renderizado dentro do `ToolBlock` quando `status === 'pending_approval'`
+- Layout:
+```
+  ┌─ ⚠️  tool: bash — requer aprovação ───────────────────────────┐
+  │  $ rm -rf dist/                                               │
+  │  [Y] Permitir    [N] Recusar    [A] Sempre permitir           │
+  └───────────────────────────────────────────────────────────────┘
+```
+- Teclado: `Y` aprova; `N` recusa; `A` chama `grantAlways(toolName)` via `usePermissions`
+- Após decisão, bloco retorna ao fluxo normal de `ToolBlock` com o status resultante
+
+**`usePermissions.ts`**
+```typescript
+type Permission = 'always' | 'never'
+
+// estado em memória por sessão
+const permissions = new Map<string, Permission>()
+
+export const isApproved = (name: string): boolean | 'ask' => {
+  const p = permissions.get(name)
+  if (p === 'always') return true
+  if (p === 'never') return false
+  return 'ask'
+}
+export const grant = (name: string) => permissions.set(name, 'always') // temporário
+export const grantAlways = (name: string) => permissions.set(name, 'always') // persiste sessão
+export const revoke = (name: string) => permissions.delete(name)
+```
+- `/permissions` slash command lista o estado atual via toast ou modal simples
+
+**`Header.tsx` — Cabeçalho real**
+```
+● OpenKore  SIPEL-CES  claude-kore-alpha
+```
+- `●` com cor dinâmica conforme estado do sistema (`--color-success`, `--color-warning`, `--color-error`)
+- Workspace e modelo ativo; dados vindos de props do `App`
+- Separador visual da área de chat via borda inferior `--color-fg-muted`
+
+**`Ctrl+C` duplo para encerrar agente:**
+- Estado `lastCtrlC: Date | null` em `index.tsx`
+- Primeiro `Ctrl+C`: seta `lastCtrlC = now()`, exibe toast `⚡ Pressione Ctrl+C novamente para encerrar o agente`
+- Segundo `Ctrl+C` dentro de 500ms: encerra agente e exibe `⊘ Agente encerrado`
+- Após 500ms sem segundo press: reseta `lastCtrlC`
+
+**Dicas contextuais dinâmicas em `Tips.tsx`:**
+- Banco de dicas por contexto: `'idle'`, `'streaming'`, `'tool_running'`, `'approval_pending'`
+- Sidebar recebe `context` prop e `Tips` exibe o conjunto relevante
+- Rotação entre dicas do contexto atual a cada 10s
+
+**Checklist de polimento:**
+- Revisar consistência de todas as cores contra a paleta
+- Spinner Braille rodando a 80ms/frame sem flickering
+- Testar em terminais de 80, 100, 120 e 160 colunas
+- Verificar colapso correto da sidebar em terminais estreitos
+- Garantir que `backgroundColor` não vaze entre componentes no Ink
+- Remover todos os `console.log` de debug
+- Validar que `[M]` indicators aparecem apenas em `NODE_ENV=development`
+
+**Verificação:**
+- [ ] Toast de sucesso aparece e some após 3s
+- [ ] Toast de erro persiste até `Esc`
+- [ ] `Ctrl+X M` abre modal de seleção de modelo com fuzzy search
+- [ ] Ferramenta destrutiva exibe bloco de aprovação; `Y/N/A` funcionam corretamente
+- [ ] `/permissions` lista aprovações ativas da sessão
+- [ ] `Ctrl+C` simples para a iteração; duplo (< 500ms) encerra o agente
+- [ ] Header exibe estado, workspace e modelo com cores corretas
+- [ ] Dicas na sidebar mudam conforme contexto da sessão
+- [ ] Nenhum flickering visível em uso normal por 5 minutos
+
+---
+
+### Resumo das Fases
+
+| Fase | Entrega Principal | Arquivos novos/modificados | Mocks necessários |
+|------|-------------------|----------------------------|-------------------|
+| 1 | Layout root + StatusBar + InputField | 3 | workspace, agente, contagem |
+| 2 | MessageList + identificadores + thinking | 4 | array de mensagens |
+| 3 | ToolBlock + micro-iterações + diff | 4 | array de tool calls |
+| 4 | Sidebar completa | 7 | tokens, custo, agentes, arquivos, LSP, TODOs |
+| 5 | Autocomplete fuzzy + slash commands | 5 | lista de arquivos do workspace |
+| 6 | Toasts + modais + aprovações + polimento | 7 | lista de modelos disponíveis |
+
+> **Convenção de mocks:** todo valor mockado deve ter o comentário `// [MOCK]` no código e exibir sufixo `[M]` na UI apenas em `NODE_ENV=development`. Isso garante visibilidade durante desenvolvimento e ausência em produção sem necessidade de busca manual.
+
+---
+
+*OpenKore TUI Design Spec — v0.2.0 — Plano de implementação por fases adicionado*
