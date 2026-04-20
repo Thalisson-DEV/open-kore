@@ -9,11 +9,14 @@ interface SetupWizardProps {
 
 export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
   const [step, setStep] = useState(0)
+  const [userName, setUserName] = useState('')
   const [provider, setProvider] = useState('')
   const [apiKey, setApiKey] = useState('')
   const [model, setModel] = useState('')
   const [ollamaModels, setOllamaModels] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+
+  const handleNameSubmit = () => setStep(1)
 
   const handleProviderSelect = async (item: { value: string }) => {
     setProvider(item.value)
@@ -24,17 +27,17 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
         const data = await res.json()
         setOllamaModels(data.models || [])
         setLoading(false)
-        setStep(2) // Pula API Key para Ollama
+        setStep(3) // Pula API Key para Ollama
       } catch (e) {
         setLoading(false)
-        setStep(2)
+        setStep(3)
       }
     } else {
-      setStep(1)
+      setStep(2)
     }
   }
 
-  const handleApiKeySubmit = () => setStep(2)
+  const handleApiKeySubmit = () => setStep(3)
   
   const handleModelSelect = (item: { value: string }) => {
     setModel(item.value)
@@ -52,6 +55,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
+          userName,
           provider, 
           apiKey: provider === 'ollama' ? 'none' : apiKey, 
           model: finalModel,
@@ -72,7 +76,17 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
       
       {step === 0 && (
         <Box flexDirection="column" marginTop={1} alignItems="center">
-          <Text color="#666666">Selecione seu provider principal:</Text>
+          <Text color="#666666">Oi, quem é você?</Text>
+          <Box backgroundColor="#111111" paddingX={2} paddingY={1} marginTop={1} minWidth={40}>
+            <Text color="#7a9e7a">› </Text>
+            <TextInput value={userName} onChange={setUserName} onSubmit={handleNameSubmit} placeholder="Seu nome ou apelido" />
+          </Box>
+        </Box>
+      )}
+
+      {step === 1 && (
+        <Box flexDirection="column" marginTop={1} alignItems="center">
+          <Text color="#666666">Prazer, {userName || 'viajante'}! Selecione seu provider principal:</Text>
           <Box marginTop={1}>
             <SelectInput 
               items={[
@@ -85,7 +99,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
         </Box>
       )}
 
-      {step === 1 && (
+      {step === 2 && (
         <Box flexDirection="column" marginTop={1} alignItems="center">
           <Text color="#666666">Informe sua API Key para {provider}:</Text>
           <Box backgroundColor="#111111" paddingX={2} paddingY={1} marginTop={1} minWidth={40}>
@@ -95,7 +109,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
         </Box>
       )}
 
-      {step === 2 && provider === 'ollama' && (
+      {step === 3 && provider === 'ollama' && (
         <Box flexDirection="column" marginTop={1} alignItems="center">
           <Text color="#666666">Selecione um modelo instalado no seu Ollama:</Text>
           <Box marginTop={1}>

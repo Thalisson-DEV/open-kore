@@ -7,6 +7,7 @@ export interface AppConfig {
   model: string
   theme: 'dark' | 'light'
   defaultAgent: string
+  userName: string
 }
 
 const CONFIG_DIR = join(homedir(), '.openkore')
@@ -16,7 +17,8 @@ export const DEFAULT_CONFIG: AppConfig = {
   provider: 'openrouter',
   model: 'qwen/qwen-2.5-coder-32b-instruct',
   theme: 'dark',
-  defaultAgent: 'backend'
+  defaultAgent: 'backend',
+  userName: 'usuário'
 }
 
 export async function ensureConfigDir() {

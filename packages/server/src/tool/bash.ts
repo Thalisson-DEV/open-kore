@@ -1,12 +1,23 @@
 import { tool } from 'ai';
 import { z } from 'zod';
+import { PermissionCallback } from './write';
 
-export const bashTool = tool({
+export const createBashTool = (onConfirm: PermissionCallback) => tool({
   description: 'Executa um comando shell no diretório do projeto.',
   parameters: z.object({
     command: z.string().describe('O comando shell a ser executado.'),
   }),
   execute: async ({ command }) => {
+    const action = await onConfirm({
+      id: `bash-${Date.now()}`,
+      tool: 'executeBash',
+      input: { command }
+    });
+
+    if (action === 'no') {
+      return { error: 'Usuário recusou a execução do comando shell.' };
+    }
+
     try {
       const proc = Bun.spawn(['bash', '-c', command]);
       const stdout = await new Response(proc.stdout).text();
