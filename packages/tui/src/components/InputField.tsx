@@ -10,8 +10,11 @@ export const InputField: React.FC<InputFieldProps> = ({ onSubmit }) => {
   const [value, setValue] = useState('')
   const [history, setHistory] = useState<string[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
+  const [isFocused, setIsFocused] = useState(true)
 
   useInput((input, key) => {
+    if (!isFocused) return
+
     if (key.upArrow) {
       if (historyIndex < history.length - 1) {
         const newIndex = historyIndex + 1
@@ -32,20 +35,32 @@ export const InputField: React.FC<InputFieldProps> = ({ onSubmit }) => {
   })
 
   return (
-    <Box paddingX={1} marginTop={1}>
-      <Text color="#4ade80">› </Text>
-      <TextInput
-        value={value}
-        onChange={setValue}
-        onSubmit={(val) => {
-          if (val.trim()) {
-            setHistory(prev => [...prev, val])
-            setHistoryIndex(-1)
-          }
-          onSubmit(val)
-          setValue('')
-        }}
-      />
+    <Box 
+      flexDirection="column" 
+      paddingX={1} 
+      paddingY={0}
+      width="100%"
+    >
+      <Box 
+        borderStyle="round" 
+        borderColor={isFocused ? "#7a9e7a" : "#3A3A3A"}
+        paddingX={1}
+      >
+        <Text color={isFocused ? "#7a9e7a" : "#666666"}>› </Text>
+        <TextInput
+          focus={isFocused}
+          value={value}
+          onChange={setValue}
+          onSubmit={(val) => {
+            if (val.trim()) {
+              setHistory(prev => [...prev, val])
+              setHistoryIndex(-1)
+            }
+            onSubmit(val)
+            setValue('')
+          }}
+        />
+      </Box>
     </Box>
   )
 }

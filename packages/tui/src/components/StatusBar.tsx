@@ -1,32 +1,52 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Box, Text } from 'ink'
 
 interface StatusBarProps {
   agent: string
   model: string
-  status: 'idle' | 'busy' | 'error'
+  status: 'idle' | 'busy' | 'error' | 'needs_setup'
+  version?: string
 }
 
-export const StatusBar: React.FC<StatusBarProps> = ({ agent, model, status }) => {
-  const statusColor = status === 'busy' ? 'yellow' : status === 'error' ? 'red' : 'green'
+export const StatusBar: React.FC<StatusBarProps> = ({ agent, model, status, version = 'v0.1.0-alpha' }) => {
+  const [time, setTime] = useState(() => {
+    const now = new Date()
+    return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+  })
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date()
+      setTime(`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`)
+    }, 60000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const getStatusIcon = () => {
+    if (status === 'error' || status === 'needs_setup') return '🔴'
+    if (status === 'busy') return '🟡'
+    return '🟢'
+  }
 
   return (
     <Box 
-      paddingX={1} 
-      borderStyle="single" 
-      borderColor="#4ade80" 
-      justifyContent="space-between"
       width="100%"
+      backgroundColor="#111111"
+      paddingX={1}
+      flexDirection="row"
     >
-      <Box>
-        <Text bold color="#4ade80">openkore</Text>
-        <Text color="gray"> | </Text>
-        <Text color="#4ade80">{agent}</Text>
-      </Box>
-      <Box>
-        <Text color="gray">{model} </Text>
-        <Text color={statusColor}>●</Text>
-      </Box>
+      <Text color="#E0E0E0">
+        {getStatusIcon()} OpenKore {version}  
+        <Text color="#3A3A3A">  |  </Text>
+        <Text color="#E0E0E0">SIPEL-CES</Text>
+        <Text color="#3A3A3A">  |  </Text>
+        <Text color="#E0E0E0">{agent}</Text>
+        <Text color="#3A3A3A">  |  </Text>
+        <Text color="#E0E0E0">{model}</Text>
+        <Text color="#3A3A3A">  |  </Text>
+        <Text color="#666666">{time}</Text>
+        <Text color="#3A3A3A">  (Ctrl+X) Menu</Text>
+      </Text>
     </Box>
   )
 }
