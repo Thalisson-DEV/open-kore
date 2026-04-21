@@ -41,13 +41,34 @@ brew install openkore/tap/openkore
 
 ## Agentes
 
-O OpenKore inclui agentes especializados que você pode alternar usando a tecla `Tab`.
+O OpenKore inclui agentes especializados que você pode alternar usando a tecla `Tab`. Eles são divididos por domínios de expertise:
 
+### 🛠️ Core Engineering
 | Agente | Descrição | Modo |
 | :--- | :--- | :--- |
-| **build** | Agente padrão com acesso total para desenvolvimento e refatoração. | Leitura + Escrita |
-| **plan** | Agente de leitura para análise e exploração de código. Ideal para planejar mudanças. | Somente Leitura |
-| **agent-builder** | Um agente especializado em criar outros agentes personalizados para o seu projeto. | Leitura + Escrita |
+| **backend** | Especialista em arquitetura de servidor, APIs e lógica de negócio. | Leitura + Escrita |
+| **frontend** | Especialista em interfaces, componentes e experiência do usuário (UX). | Leitura + Escrita |
+| **plan** | Arquiteto e planejador. Analisa o código e entrega planos acionáveis sem alterar nada. | Somente Leitura |
+| **agent-builder** | Especializado em criar e configurar novos agentes para o seu projeto. | Leitura + Escrita |
+
+### 🛡️ Quality & Safety
+| Agente | Descrição | Modo |
+| :--- | :--- | :--- |
+| **reviewer** | Revisa código com foco em clareza, consistência e boas práticas. | Somente Leitura |
+| **tester** | Especialista em QA: escreve testes unitários, integração e analisa cobertura. | Leitura + Escrita |
+| **security** | Analista de segurança. Identifica vulnerabilidades e propõe mitigações. | Somente Leitura |
+
+### 🏗️ Infrastructure & Data
+| Agente | Descrição | Modo |
+| :--- | :--- | :--- |
+| **devops** | Especialista em CI/CD, containers, deploy e automação de pipelines. | Leitura + Escrita |
+| **database** | Especialista em modelagem de dados, queries, migrações e otimização. | Leitura + Escrita |
+
+### 🔧 Maintenance & Improvement
+| Agente | Descrição | Modo |
+| :--- | :--- | :--- |
+| **debugger** | Especialista em diagnóstico de bugs e análise de causa raiz (root cause). | Leitura + Escrita |
+| **refactor** | Focado em melhoria de código existente, legibilidade e redução de dívida técnica. | Leitura + Escrita |
 
 > Além dos embutidos, você pode criar agentes personalizados em `.openkore/agents/` usando YAML ou TypeScript.
 
@@ -73,14 +94,23 @@ Segurança é prioridade. Veja nossa política em [SECURITY.md](SECURITY.md).
 
 ## FAQ
 
-### Como o OpenKore se diferencia do Claude Code ou OpenCode?
-O OpenKore é inspirado no OpenCode, mas foca em ser **100% TypeScript/Bun native**. Enquanto outras ferramentas podem ser acopladas a provedores específicos, o OpenKore prioriza a soberania de dados com suporte de primeira classe ao Ollama, permitindo que você rode agentes complexos 100% offline ou via OpenRouter.
+### O OpenKore é realmente gratuito?
+Sim, o OpenKore é um software open source sob a licença MIT. O custo de uso depende inteiramente do modelo que você escolher. Se usar modelos locais via **Ollama**, o custo é zero. Se usar provedores como **OpenRouter**, **OpenAI** ou **Anthropic**, você pagará apenas pelo seu consumo de tokens diretamente ao provedor.
 
-### Posso usar meus próprios modelos?
-Sim. Através do Ollama, você pode usar Llama 3, Qwen 2.5 Coder, DeepSeek ou qualquer modelo local compatível.
+### Posso rodar o OpenKore 100% offline?
+Sim! Ao configurar o OpenKore para usar o **Ollama** com modelos como `llama3` ou `qwen2.5-coder`, todo o processamento de IA acontece localmente na sua máquina. Nenhum código ou dado sai do seu ambiente, garantindo máxima privacidade.
+
+### Como funcionam os Agentes Customizados?
+O OpenKore foi desenhado para ser extensível. Você pode criar novos agentes simplesmente adicionando arquivos `.yaml` ou `.ts` no diretório `.openkore/agents/` do seu projeto. Isso permite criar especialistas em partes específicas do seu sistema ou em stacks proprietárias.
+
+### O OpenKore suporta execução remota?
+Sim. Graças à sua arquitetura **Client/Server**, o servidor do OpenKore pode rodar em uma máquina robusta (ou em um container) enquanto você interage através da TUI no seu terminal local. A comunicação é feita via uma API segura com suporte a streaming (SSE).
+
+### O OpenKore pode danificar meu código?
+Como qualquer agente que executa comandos e edita arquivos, o OpenKore deve ser usado com cautela. Agentes com permissão de escrita sempre solicitarão sua confirmação antes de executar comandos `bash` ou salvar alterações em arquivos. Recomendamos sempre revisar as mudanças e utilizar controle de versão (Git).
 
 ---
 
 <div align="center">
-Feito com ❤️ pela comunidade OpenKore.
+Feito com ❤️ por Thalisson Damião.
 </div>
