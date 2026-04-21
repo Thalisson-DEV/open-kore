@@ -81,6 +81,30 @@ app.get('/providers/ollama/models', async (c) => {
   return c.json({ models })
 })
 
+app.get('/files', async (c) => {
+  const q = (c.req.query('q') || '').toLowerCase()
+  const projectRoot = process.env.OPENKORE_PROJECT_ROOT || process.cwd();
+  
+  try {
+    const glob = new Bun.Glob(`**/*${q}*`);
+    const files = [];
+    let count = 0;
+    for await (const file of glob.scan({ cwd: projectRoot, caseSensitive: false })) {
+      if (file.includes('node_modules') || file.includes('.git') || file.includes('.turbo') || file.includes('dist')) continue;
+      
+      const relativePath = file.startsWith(projectRoot) 
+        ? file.slice(projectRoot.length).replace(/^\//, '')
+        : file;
+
+      files.push(relativePath);
+      if (++count > 10) break;
+    }
+    return c.json({ files });
+  } catch (e) {
+    return c.json({ files: [] });
+  }
+})
+
 app.post('/permission/:id', async (c) => {
   const id = c.req.param('id')
   const { action } = await c.req.json() as { action: PermissionAction }
@@ -103,7 +127,10 @@ app.post('/message', async (c) => {
   const toolGuard = ToolGuard.getInstance();
   const session = store.getOrCreateSession(projectRoot, config.defaultAgent);
 
-  // 1. SALVAR MENSAGEM DO USUÁRIO IMEDIATAMENTE
+  // 1. PROCESSAR @MENTIONS IMEDIATAMENTE
+  const { processedContent, attachments, files } = await memory.processAtMentions(content);
+
+  // 1.5 SALVAR MENSAGEM DO USUÁRIO IMEDIATAMENTE (Original para a UI, processada no sistema)
   store.addMessage(session.id, 'user', content);
 
   let tier1Instance: any;
@@ -115,19 +142,33 @@ app.post('/message', async (c) => {
 
   const intent = await classifyIntent(tier1Instance, content);
   let targetModel = config.tier2Model;
-  if (intent === 'GREETING' || intent === 'READ_ONLY' || activeAgent.id === 'plan') {
+  
+  // Apenas saudações usam o modelo tier1 (rápido).
+  // Qualquer outra intenção que possa exigir ferramentas usa tier2.
+  if (intent === 'GREETING' && activeAgent.id !== 'plan') {
     targetModel = config.tier1Model;
   }
 
-  // 2. BUSCAR HISTÓRICO (O PAYLOAD JÁ INCLUIRÁ A MENSAGEM SALVA)
-  const fullSystemPrompt = activeAgent.systemPrompt + localRules;
+  // 2. BUSCAR HISTÓRICO (Passando o conteúdo processado para não duplicar menções)
+  const fullSystemPrompt = activeAgent.systemPrompt + localRules + attachments;
   const messages = await memory.buildPayload(session.id, config.provider, '', fullSystemPrompt, config.tier1Model);
 
   console.log(`[Server] Enviando payload com ${messages.length} mensagens para o modelo.`);
-  const lastMsg = messages[messages.length - 1];
-  console.log(`[Server] Última mensagem do payload: [${lastMsg?.role}] ${typeof lastMsg?.content === 'string' ? lastMsg.content.substring(0, 60) : '(content array)'}`);
 
   return streamSSE(c, async (stream) => {
+    // EMITIR INDICADORES DE LEITURA DOS ARQUIVOS @
+    for (const file of files) {
+      await stream.writeSSE({ 
+        data: JSON.stringify({ 
+          type: 'tool_result', 
+          name: 'readFile', 
+          output: { success: true }, 
+          agent: activeAgent.id,
+          input: { path: file } // Necessário para a TUI renderizar o nome do arquivo
+        }) 
+      });
+    }
+
     let modelInstance: any
     try {
       if (config.provider === 'openrouter') {
@@ -178,8 +219,7 @@ app.post('/message', async (c) => {
       for await (const part of result.fullStream) {
         console.log(`[Stream Part]`, (part as any).type);
         if (part.type === 'text-delta') {
-          console.log(`[DEBUG-TEXT-DELTA]`, JSON.stringify(part));
-          const delta = (part as any).delta || (part as any).textDelta || (part as any).text;
+          const delta = (part as any).textDelta || (part as any).delta || (part as any).text;
           if (delta) {
             assistantContent += delta;
             await stream.writeSSE({ data: JSON.stringify({ type: 'text', delta: delta, agent: activeAgent.id }) })
@@ -187,7 +227,7 @@ app.post('/message', async (c) => {
         } else if (part.type === 'reasoning-delta') {
           const delta = (part as any).delta;
           if (delta) {
-            await stream.writeSSE({ data: JSON.stringify({ type: 'text', delta: `[Pensamento: ${delta}]`, agent: activeAgent.id }) })
+            await stream.writeSSE({ data: JSON.stringify({ type: 'text', delta: `[Thinking: ${delta}]`, agent: activeAgent.id }) })
           }
         } else if (part.type === 'tool-call') {
           toolCount++;
@@ -210,32 +250,28 @@ app.post('/message', async (c) => {
       } else if (toolCount > 0) {
         console.log(`[Server] Iniciando fallback forçado para ${toolCount} ferramentas...`);
         try {
-          // Fallback ultra-agressivo: limpando o payload para o modelo não se perder
           const messagesForFallback = await memory.buildPayload(session.id, config.provider, '', fullSystemPrompt, config.tier1Model);
           
-          // Log do último par tool-call/result para depuração no servidor
-          const lastToolMsg = messagesForFallback.filter(m => m.role === 'tool').pop();
-          if (lastToolMsg) {
-            console.log(`[Server-Fallback] Último resultado de ferramenta:`, JSON.stringify(lastToolMsg.content).substring(0, 200) + '...');
-          }
-
           messagesForFallback.push({ 
             role: 'user', 
-            content: 'RESUMO OBRIGATÓRIO: Baseado nos resultados das ferramentas que você acabou de executar, responda ao usuário agora de forma clara e direta sobre o que você encontrou ou o que aconteceu. Não ignore esta mensagem.' 
+            content: 'IMPORTANT: You have just executed some tools. Based ON THE TOOL RESULTS ABOVE, provide a final response to the user now. Answer in the same language as the user query.' 
           });
 
           const fallbackResult = await streamText({
             model: modelInstance,
             messages: messagesForFallback,
             maxTokens: 1000,
-            temperature: 0.7, // Um pouco mais de criatividade para evitar vácuo
+            temperature: 0.3, // Mais baixo para ser mais direto
           } as any);
 
           let fallbackContent = '';
           for await (const part of fallbackResult.fullStream) {
-            if (part.type === 'text-delta' && (part as any).textDelta) {
-              fallbackContent += (part as any).textDelta;
-              await stream.writeSSE({ data: JSON.stringify({ type: 'text', delta: (part as any).textDelta, agent: activeAgent.id }) })
+            if (part.type === 'text-delta') {
+              const delta = (part as any).textDelta || (part as any).delta || (part as any).text;
+              if (delta) {
+                fallbackContent += delta;
+                await stream.writeSSE({ data: JSON.stringify({ type: 'text', delta: delta, agent: activeAgent.id }) })
+              }
             }
           }
           

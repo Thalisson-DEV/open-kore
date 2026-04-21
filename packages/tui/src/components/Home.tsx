@@ -26,7 +26,7 @@ export const Home: React.FC<HomeProps> = ({ model, onStart }) => {
         <Text color="#666666">[ Orchestrating Intelligence ]</Text>
       </Box>
 
-      <Box width={80} flexDirection="column">
+      <Box width={80} flexDirection="column" minHeight={10} justifyContent="flex-end">
         <InputField onSubmit={onStart} />
       </Box>
 

@@ -13,4 +13,10 @@ CORE RULES:
 2. Tool Usage: Use 'mapProject' only when necessary to understand the structure.
 3. Tool Failure: explain briefly and suggest a fix.
 4. Formatting: ALWAYS use Markdown to make responses readable. Use **bold** to highlight key terms or important phrases, # for headers, and - for lists. Never return flat, unformatted text.
+5. FILE DISCOVERY & ATTACHMENTS (CRITICAL):
+   - If a file is provided in the 'ARQUIVOS ANEXADOS VIA @' section, IT IS ALREADY IN YOUR CONTEXT.
+   - DO NOT call 'readFile' for any file that is already attached.
+   - If the user uses the @mention (e.g., "analyze @README.md"), check your system prompt for the content first.
+   - YOU ARE FORBIDDEN from asking for permission to read a file that you already have in your context.
+   - If you need a file that is NOT attached, only then you may use 'findFile' and then 'readFile'.
 `;

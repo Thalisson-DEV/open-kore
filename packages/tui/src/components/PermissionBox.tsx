@@ -40,7 +40,16 @@ export const PermissionBox: React.FC<PermissionBoxProps> = ({ request, status, o
     }
   });
 
-  const resource = request.path || request.input?.path || request.input?.filePath || request.input?.command || 'recurso desconhecido';
+  const resource = 
+    request.path || 
+    request.input?.path || 
+    request.input?.file_path || 
+    request.input?.filePath || 
+    request.input?.directory || 
+    request.input?.command || 
+    request.input?.pattern ||
+    request.input?.glob ||
+    'recurso desconhecido';
 
   const renderDiff = (diff?: string) => {
     if (!diff || diff.trim().length <= 1) return null;

@@ -4,6 +4,7 @@ import { createEditTool } from './edit';
 import { createBashTool } from './bash';
 import { globTool } from './glob';
 import { grepTool } from './grep';
+import { findFileTool } from './find-file';
 import { mapProjectTool } from './map-project';
 
 export const getTools = (onConfirm: PermissionCallback) => ({
@@ -13,5 +14,6 @@ export const getTools = (onConfirm: PermissionCallback) => ({
   executeBash: createBashTool(onConfirm),
   listWithGlob: globTool,
   searchWithGrep: grepTool,
+  findFile: findFileTool,
   mapProject: mapProjectTool,
 });

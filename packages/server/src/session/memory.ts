@@ -23,6 +23,62 @@ export class MemoryManager {
     return str;
   }
 
+  public async processAtMentions(content: string): Promise<{ processedContent: string, attachments: string, files: string[] }> {
+    const atRegex = /@([a-zA-Z0-9\._\-\/]+)/gi;
+    const matches = [...content.matchAll(atRegex)];
+    const filesFound: string[] = [];
+    if (matches.length === 0) return { processedContent: content, attachments: '', files: [] };
+
+    let attachments = '\n\n⚠️ CONTEÚDO PRIORITÁRIO - ARQUIVOS ANEXADOS VIA @ (NÃO USE readFile PARA ESTES ARQUIVOS):';
+    const projectRoot = process.env.OPENKORE_PROJECT_ROOT || process.cwd();
+    const processedFiles = new Set<string>();
+    let processedContent = content;
+
+    for (const match of matches) {
+      const fullMatch = match[0];
+      const filePath = match[1];
+      
+      // Remove o @ do conteúdo para a IA
+      processedContent = processedContent.replace(fullMatch, filePath);
+
+      if (processedFiles.has(filePath)) continue;
+      processedFiles.add(filePath);
+
+      try {
+        let actualPath = filePath;
+        const fullPath = filePath.startsWith('/') ? filePath : `${projectRoot}/${filePath}`;
+        let file = Bun.file(fullPath);
+        
+        // Se não encontrar diretamente, tenta busca insensível ao caso
+        if (!(await file.exists())) {
+          const name = filePath.includes('/') ? filePath.substring(filePath.lastIndexOf('/') + 1) : filePath;
+          
+          const glob = new Bun.Glob(`**/${name}`);
+          for await (const found of glob.scan({ cwd: projectRoot, caseSensitive: false })) {
+            if (found.toLowerCase().endsWith(filePath.toLowerCase())) {
+               file = Bun.file(`${projectRoot}/${found}`);
+               actualPath = found;
+               break;
+            }
+          }
+        }
+
+        if (await file.exists()) {
+          const text = await file.text();
+          const truncated = text.length > 8000 ? text.substring(0, 8000) + '\n... (conteúdo truncado)' : text;
+          attachments += `\n\n--- CONTEÚDO DE: ${actualPath} ---\n${truncated}\n--- FIM DE: ${actualPath} ---`;
+          filesFound.push(actualPath);
+        } else {
+          attachments += `\n\n[AVISO: O arquivo ${filePath} não foi encontrado.]`;
+        }
+      } catch (e: any) {
+        attachments += `\n\n[ERRO ao ler ${filePath}: ${e.message}]`;
+      }
+    }
+
+    return { processedContent, attachments, files: filesFound };
+  }
+
   public async buildPayload(
     sessionId: string, 
     provider: string, 
@@ -33,8 +89,17 @@ export class MemoryManager {
     const store = SessionStore.getInstance();
     const budget = this.BUDGETS[provider] || 8000;
     
+    // Processar @mentions no novo prompt se existir
+    let attachments = '';
+    let processedPrompt = newPrompt;
+    if (newPrompt) {
+      const result = await this.processAtMentions(newPrompt);
+      processedPrompt = result.processedContent;
+      attachments = result.attachments;
+    }
+
     // 1. Bloco de Sistema (sempre o primeiro)
-    let finalSystemPrompt = systemPrompt;
+    let finalSystemPrompt = systemPrompt + attachments;
     const summary = store.getLatestSummary(sessionId);
     if (summary) {
       finalSystemPrompt += `\n\nSUMÁRIO DO CONTEXTO ANTERIOR: ${summary.condensed_context}`;
@@ -173,12 +238,12 @@ export class MemoryManager {
     }
 
     // 3. Adicionar nova mensagem se não for vazia
-    if (newPrompt && newPrompt.trim()) {
+    if (processedPrompt && processedPrompt.trim()) {
       const last = sanitized[sanitized.length - 1];
       if (last && last.role === 'user' && typeof last.content === 'string') {
-        last.content += "\n" + newPrompt;
+        last.content += "\n" + processedPrompt;
       } else {
-        sanitized.push({ role: 'user', content: String(newPrompt) });
+        sanitized.push({ role: 'user', content: String(processedPrompt) });
       }
     }
 

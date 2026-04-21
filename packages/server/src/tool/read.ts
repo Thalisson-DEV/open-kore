@@ -5,15 +5,20 @@ import { PermissionCallback } from './write';
 import { ToolGuard } from '../agent/tool-guard';
 
 export const createReadTool = (onConfirm: PermissionCallback) => tool({
-  description: 'Lê o conteúdo de um arquivo em disco.',
+  description: 'Lê o conteúdo de um arquivo em disco. PROIBIDO: Não use esta ferramenta se o arquivo já estiver na seção "ARQUIVOS ANEXADOS VIA @" do prompt de sistema.',
   parameters: z.object({
-    path: z.string().describe('O caminho relativo para o arquivo que deve ser lido.'),
+    path: z.string().describe('O caminho relativo para o arquivo. Antes de usar, verifique se o conteúdo já não foi fornecido no contexto inicial.'),
   }),
   execute: async (args: any) => {
-    const path = args.path || args.filePath;
+    let path = args.path || args.filePath;
     
     if (!path || typeof path !== 'string') {
       return { error: 'Caminho do arquivo inválido ou não fornecido.' };
+    }
+
+    // Remover @ se a IA enviar por engano (visto que ela vê @ na UI)
+    if (path.startsWith('@')) {
+      path = path.slice(1);
     }
 
     const projectRoot = process.env.OPENKORE_PROJECT_ROOT || process.cwd();
@@ -42,7 +47,24 @@ export const createReadTool = (onConfirm: PermissionCallback) => tool({
     try {
       const file = Bun.file(fullPath);
       if (!(await file.exists())) {
-        return { error: `Arquivo não encontrado: ${path}` };
+        // Tenta encontrar sugestões
+        const fileName = path.split('/').pop() || '';
+        const baseName = fileName.split('.')[0] || fileName;
+        const glob = new Bun.Glob(`**/*${baseName}*`);
+        const suggestions = [];
+        let count = 0;
+        for await (const s of glob.scan('.')) {
+          if (!s.includes('node_modules')) {
+            suggestions.push(s);
+            if (++count > 5) break;
+          }
+        }
+
+        const suggestionMsg = suggestions.length > 0 
+          ? `\nSugestões encontradas: ${suggestions.join(', ')}` 
+          : '\nNenhuma sugestão encontrada. Use findFile para localizar o arquivo corretamente.';
+
+        return { error: `Arquivo não encontrado: ${path}.${suggestionMsg}` };
       }
       const content = await file.text();
       const result = content.length > 3000 

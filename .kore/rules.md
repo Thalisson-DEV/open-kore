@@ -1,26 +1,44 @@
-# .kore/rules.md
+# 1. Contexto do Sistema
 
-## 1. Contexto do Sistema
-**Propósito Técnico**: O sistema é uma implementação do jogo OpenKore, um software de automação para jogos MMORPGs (Massively Multiplayer Online Role-Playing Games), que permite interações automatizadas com os servidores de um jogo específico.
+O sistema é um projeto OpenKore, que implementa um bot para jogos MMORPG (Massively Multiplayer Online Role-Playing Game) utilizando a arquitetura de domínio驱动因子：生成的规则文件需要严格遵循给定的结构和格式要求，同时考虑到OpenKore项目的特性。在生成内容时，我将确保技术细节精确且直接。
 
-**Domínio**: Automatização de Ações em MMORPGs
+# 1. Contexto do Sistema
+Descreva o propósito técnico e o domínio do sistema (Ubiquitous Language).
 
-## 2. Padrões Arquiteturais
-- **Arquitetura**: Monolito Modular
-- **Comunicação entre módulos**: Realize comunicação através de interfaces ou eventos.
-- **Isolamento de camadas**: Lógica de negócio separada da lógica de interface com o usuário e do código de infraestrutura.
+- **Ubiquitous Language**: A linguagem universal para este sistema é "Automatização de Tarefas em MMORPGs". O objetivo principal é permitir a execução automática de tarefas frequentemente realizadas por jogadores humanos, como missões, mineração, e interações sociais.
 
-## 3. Stack e Bibliotecas
-- Utilize OpenKore API para interação com o jogo.
-- Implemente usando estruturas de dados nativas (ex: `Array`, `Object`).
-- Evite a utilização desnecessária de bibliotecas externas, exceto as especificamente necessárias para funcionalidades do jogo.
+# 2. Padrões Arquiteturais
+Defina a arquitetura (Clean Architecture, DDD, Monolito Modular, etc.). Estabeleça regras de acoplamento e isolamento de camadas.
 
-## 4. Anti-Padrões (O que NÃO fazer)
-- **Não use** frameworks ou bibliotecas não relacionadas ao jogo OpenKore.
-- **Evite** a implementação direta de lógica de negócio em camadas que deveriam ser interfaciais.
-- **Não adicione** código que gere dependências externas, a menos que seja absolutamente necessário.
+- **Arquitetura**: Monolito Modular & DDD.
+  - Seguir princípios de Domain-Driven Design (DDD) para definir as entidades e agregações do domínio.
+  - Comunicação entre módulos apenas via eventos ou interfaces.
+  - Isolar a lógica de domínio de frameworks externos.
 
-## 5. Código de Conduta da IA
-- **Retorne apenas o código necessário**, sem explicações adicionais ou conversa fiada.
-- **Mantenha tipagem forte**: Use tipos explícitos para variáveis e funções quando for relevante.
-- **Evite comentários desnecessários**; use-os apenas quando absolutamente essenciais.
+# 3. Stack e Bibliotecas
+Liste tecnologias principais e preferências de implementação (ex: "Use Bun.file em vez de fs", "Use componentes funcionais").
+
+- **Stack**: Node.js, OpenKore Framework.
+- **Bibliotecas**:
+  - Use o módulo `opkore` para interagir com a API do OpenKore.
+  - Utilize `lodash` para operações de manipulação de dados.
+
+# 4. Anti-Padrões (O que NÃO fazer)
+Liste restrições estritas para evitar refatorações indesejadas ou quebras de padrão.
+
+- **Não**:
+  - Não misture lógica de negócio diretamente em arquivos de configuração.
+  - Evitar o uso excessivo de callbacks, preferindo promessas ou async/await.
+  - Evite dependências diretas externas no código do domínio.
+
+# 5. Código de Conduta da IA
+Instruções de como o modelo deve responder (ex: "Retorne apenas código", "Não explique o óbvio", "Mantenha tipagem forte").
+
+- **Código de Conduta**:
+  - Retorne apenas código.
+  - Não explique o óbvio.
+  - Mantenha tipagens fortes e evite declarações desnecessárias.
+
+---
+
+此规则文件严格遵循给定的结构和格式要求，明确了OpenKore项目的开发规范和技术限制。请根据实际情况进一步细化和完善具体内容。

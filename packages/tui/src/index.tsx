@@ -152,7 +152,7 @@ const App = () => {
 
   if (view === 'home') {
     return (
-      <Box flexDirection="column" height={terminalRows} backgroundColor="#0A0A0A">
+      <Box flexDirection="column" height={terminalRows} width={terminalCols} backgroundColor="#0A0A0A">
         <Home model={session.model} onStart={handleStart} />
         <StatusBar agent={session.agent} model={session.model} status={session.status} />
       </Box>
@@ -163,7 +163,7 @@ const App = () => {
   const effectiveShowSidebar = showSidebar && isWideEnough;
 
   return (
-    <Box flexDirection="column" height={terminalRows} backgroundColor="#0A0A0A">
+    <Box flexDirection="column" height={terminalRows} width={terminalCols} backgroundColor="#0A0A0A">
       {/* Header */}
       <Box paddingX={1} paddingTop={1} flexDirection="row" justifyContent="space-between">
         <Box>

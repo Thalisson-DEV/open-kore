@@ -15,9 +15,13 @@ export const createWriteTool = (onConfirm: PermissionCallback) => tool({
     path: z.string().describe('O caminho para o arquivo que deve ser escrito.'),
     content: z.string().describe('O conteúdo completo para gravar no arquivo.'),
   }),
-  execute: async (args: any) => {
-    const path = args.path || args.filePath;
+  execute: async (args: { path: string, content: string }) => {
+    const path = args.path;
     const content = args.content || '';
+
+    if (!path) {
+      return { error: 'Caminho do arquivo (path) não fornecido pela IA.' };
+    }
 
     // Gera um preview do conteúdo para o diff
     const lines = content.split('\n');
@@ -34,10 +38,6 @@ export const createWriteTool = (onConfirm: PermissionCallback) => tool({
 
     if (action === 'no') {
       return { error: 'Usuário recusou a escrita do arquivo.' };
-    }
-
-    if (!path) {
-      return { error: 'Caminho do arquivo (path) não fornecido pela IA.' };
     }
 
     try {

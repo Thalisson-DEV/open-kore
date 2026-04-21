@@ -125,15 +125,15 @@ Qualquer dúvida de implementação: consultar `ARCHITECTURE.md`.
 - [x] Budget configurável por provider (default: 32k OpenRouter, 8k Ollama).
 
 ### 4.3 — Compactação Assíncrona (Tier 1)
-- [ ] Criar `agent/compaction.ts`
-- [ ] Disparo automático quando o histórico da janela deslizante > 80% do budget estabelecido.
-- [ ] Utilizar exclusivamente o modelo Tier 1 (mais barato/rápido) em background para ler as mensagens e atualizar a tabela `summaries`.
-- [ ] Descartar logs da tabela `messages` que já foram sumarizados para limpar o banco.
+- [x] Criar `agent/compaction.ts`
+- [x] Disparo automático quando o histórico da janela deslizante > 80% do budget estabelecido.
+- [x] Utilizar exclusivamente o modelo Tier 1 (mais barato/rápido) em background para ler as mensagens e atualizar a tabela `summaries`.
+- [x] Descartar logs da tabela `messages` que já foram sumarizados para limpar o banco.
 
 ### 4.4 — Tool Caching Inteligente e Anti-Stall
-- [ ] Criar `agent/tool-guard.ts` com integração ao SQLite.
-- [ ] **Cache de I/O:** Se a IA pedir para ler (`tool/read`) um arquivo e o `fs.stat` (timestamp de modificação) for o mesmo da última leitura neste turno/sessão, retornar do cache do SQLite em vez de recarregar o disco e enviar novamente pro prompt.
-- [ ] Anti-Stall: No `agent/runner.ts`, detectar parada prematura do `maxSteps`. Injetar `[Sistema: Tarefa pendente. Qual o próximo passo?]`. Encerrar na 4ª tentativa.
+- [x] Criar `agent/tool-guard.ts` com integração ao SQLite.
+- [x] **Cache de I/O:** Se a IA pedir para ler (`tool/read`) um arquivo e o `fs.stat` (timestamp de modificação) for o mesmo da última leitura neste turno/sessão, retornar do cache do SQLite em vez de recarregar o disco e enviar novamente pro prompt.
+- [x] Anti-Stall: No `agent/runner.ts`, detectar parada prematura do `maxSteps`. Injetar `[Sistema: Tarefa pendente. Qual o próximo passo?]`. Encerrar na 4ª tentativa.
 
 **Verificação:** sessão longa não eleva custo linearmente; arquivo estático lido duas vezes consome 0 tokens na segunda chamada; orquestração via banco não impacta performance da UI.
 

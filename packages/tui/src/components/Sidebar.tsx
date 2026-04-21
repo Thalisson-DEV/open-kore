@@ -30,6 +30,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <Box 
       flexDirection="column" 
       width={32} 
+      flexShrink={0}
       backgroundColor="#111111"
       paddingX={2}
       paddingY={1}

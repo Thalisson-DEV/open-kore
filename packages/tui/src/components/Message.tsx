@@ -125,12 +125,19 @@ export const Message: React.FC<MessageProps> = ({
               );
             }
 
-            const codeParts = part.split(/(`.*?`)/g);
+            const codeParts = part.split(/(`.*?`|@[a-zA-Z0-9\._\-\/]+)/gi);
             return codeParts.map((codePart, j) => {
               if (codePart.startsWith('`') && codePart.endsWith('`')) {
                 return (
                   <Text key={`${i}-${j}`} color="#EBCB8B">
                     {codePart.slice(1, -1)}
+                  </Text>
+                );
+              }
+              if (codePart.startsWith('@')) {
+                return (
+                  <Text key={`${i}-${j}`} color="#7a9e7a" bold>
+                    {codePart}
                   </Text>
                 );
               }

@@ -93,11 +93,37 @@ export function useSSE() {
                 }]);
               } else if (data.type === 'tool_result') {
                 const isError = data.output && (data.output.error || data.output.success === false);
-                setMessages(prev => prev.map(msg =>
-                  msg.role === 'tool' && msg.toolName === data.name && msg.status === 'streaming'
-                    ? { ...msg, status: isError ? 'error' : 'done', toolOutput: data.output }
-                    : msg
-                ));
+                
+                // Atualizar touchedFiles se houver um caminho
+                const path = data.input?.path || data.input?.filePath || data.input?.file_path;
+                if (path) {
+                   setTouchedFiles(prev => [...new Set([...prev, path])]);
+                }
+
+                setMessages(prev => {
+                  const existingStreaming = prev.find(msg => 
+                    msg.role === 'tool' && msg.toolName === data.name && msg.status === 'streaming'
+                  );
+
+                  if (existingStreaming) {
+                    return prev.map(msg =>
+                      msg === existingStreaming
+                        ? { ...msg, status: isError ? 'error' : 'done', toolOutput: data.output }
+                        : msg
+                    );
+                  } else {
+                    // Se não houver uma mensagem de start correspondente (comum para injeções via @)
+                    return [...prev, {
+                      id: `tool-${Date.now()}-${Math.random()}`,
+                      role: 'tool',
+                      status: isError ? 'error' : 'done',
+                      toolName: data.name,
+                      toolInput: data.input,
+                      toolOutput: data.output,
+                      agentId: data.agent
+                    }];
+                  }
+                });
               } else if (data.type === 'usage') {
                 setSessionUsage(prev => ({
                   promptTokens: prev.promptTokens + data.promptTokens,
