@@ -2,14 +2,35 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { PermissionCallback } from './write';
 
-export const createEditTool = (onConfirm: PermissionCallback) => tool({
-  description: 'Edita um arquivo existente substituindo uma string exata por outra.',
+export const createEditTool = (onConfirm: PermissionCallback, activeFiles?: string[]) => tool({
+  description: 'Edita um arquivo existente substituindo uma string exata por outra. IMPORTANTE: oldString deve ser IDENTICA ao que está no arquivo (espaços, quebras de linha, etc). Se não tiver certeza, use readFile antes.',
   parameters: z.object({
-    path: z.string().describe('O caminho para o arquivo que deve ser editado.'),
-    oldString: z.string().describe('A string exata que deve ser substituída.'),
-    newString: z.string().describe('A nova string que deve entrar no lugar.'),
+    path: z.string().optional().describe('O caminho para o arquivo que deve ser editado. Pode ser omitido se já estiver no contexto (@arquivo).'),
+    oldString: z.string().describe('O trecho de texto EXATO que deve ser substituído.'),
+    newString: z.string().describe('O novo texto que entrará no lugar.'),
   }),
-  execute: async ({ path, oldString, newString }) => {
+  execute: async (args: any) => {
+    let path = args.path || args.filePath || args.file;
+    
+    // Auto-preenchimento do path se houver apenas 1 arquivo anexado e a IA omitiu o path
+    if (!path && activeFiles && activeFiles.length === 1) {
+      path = activeFiles[0];
+    }
+
+    const oldString = args.oldString || args.old_string;
+    const newString = args.newString || args.new_string;
+
+    if (!path) {
+      return { error: 'Caminho do arquivo (path) não fornecido pela IA e múltiplos ou nenhum arquivo anexado.' };
+    }
+
+    const projectRoot = process.env.OPENKORE_PROJECT_ROOT || process.cwd();
+    const fullPath = path.startsWith('/') ? path : `${projectRoot}/${path}`;
+
+    if (oldString === undefined || newString === undefined) {
+      return { error: 'oldString ou newString não fornecidos pela IA.' };
+    }
+
     const action = await onConfirm({
       id: `edit-${Date.now()}`,
       tool: 'editFile',
@@ -22,7 +43,7 @@ export const createEditTool = (onConfirm: PermissionCallback) => tool({
     }
 
     try {
-      const file = Bun.file(path);
+      const file = Bun.file(fullPath);
       if (!(await file.exists())) {
         return { error: `Arquivo não encontrado: ${path}` };
       }
@@ -38,7 +59,7 @@ export const createEditTool = (onConfirm: PermissionCallback) => tool({
       }
 
       const newContent = content.replace(oldString, newString);
-      await Bun.write(path, newContent);
+      await Bun.write(fullPath, newContent);
       
       return { success: true, path };
     } catch (e: any) {

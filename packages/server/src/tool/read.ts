@@ -4,32 +4,44 @@ import { join } from 'path';
 import { PermissionCallback } from './write';
 import { ToolGuard } from '../agent/tool-guard';
 
+const MAX_CHARS = 3000;
+
+// ✅ FIX: Trunca no limite da última linha completa antes de MAX_CHARS,
+// evitando cortes no meio de funções, strings ou tokens UTF-8.
+function truncateAtLineBoundary(content: string, limit: number): { text: string; truncated: boolean } {
+  if (content.length <= limit) return { text: content, truncated: false };
+
+  const slice = content.slice(0, limit);
+  const lastNewline = slice.lastIndexOf('\n');
+  const cutAt = lastNewline > 0 ? lastNewline : limit;
+
+  return {
+    text: content.slice(0, cutAt),
+    truncated: true,
+  };
+}
+
 export const createReadTool = (onConfirm: PermissionCallback) => tool({
-  description: 'Lê o conteúdo de um arquivo em disco. PROIBIDO: Não use esta ferramenta se o arquivo já estiver na seção "ARQUIVOS ANEXADOS VIA @" do prompt de sistema.',
+  description: 'Reads the content of a file from disk. FORBIDDEN: Do not use if the file is already in the "ATTACHED FILES" section of the system prompt.',
   parameters: z.object({
-    path: z.string().describe('O caminho relativo para o arquivo. Antes de usar, verifique se o conteúdo já não foi fornecido no contexto inicial.'),
+    path: z.string().describe('The relative path to the file.'),
   }),
   execute: async (args: any) => {
     let path = args.path || args.filePath;
-    
+
     if (!path || typeof path !== 'string') {
-      return { error: 'Caminho do arquivo inválido ou não fornecido.' };
+      return { error: 'Invalid or missing file path.' };
     }
 
-    // Remover @ se a IA enviar por engano (visto que ela vê @ na UI)
-    if (path.startsWith('@')) {
-      path = path.slice(1);
-    }
+    if (path.startsWith('@')) path = path.slice(1);
 
     const projectRoot = process.env.OPENKORE_PROJECT_ROOT || process.cwd();
     const fullPath = path.startsWith('/') ? path : join(projectRoot, path);
 
-    // 1. Tentar recuperar do cache via ToolGuard
     const toolGuard = ToolGuard.getInstance();
     const cached = await toolGuard.getValidCache("default-session", 'readFile', { path });
-    
     if (cached) {
-      console.log(`[Tool:readFile] Usando cache para ${path}`);
+      console.log(`[Tool:readFile] Cache hit for ${path}`);
       return cached;
     }
 
@@ -37,43 +49,47 @@ export const createReadTool = (onConfirm: PermissionCallback) => tool({
       id: `read-${Date.now()}`,
       tool: 'readFile',
       input: { path },
-      path: path
+      path,
     });
 
-    if (confirmed === 'no') {
-      return { error: 'Usuário recusou a leitura do arquivo.' };
-    }
+    if (confirmed === 'no') return { error: 'User denied file read.' };
 
     try {
       const file = Bun.file(fullPath);
+
       if (!(await file.exists())) {
-        // Tenta encontrar sugestões
-        const fileName = path.split('/').pop() || '';
-        const baseName = fileName.split('.')[0] || fileName;
+        const fileName = path.split('/').pop() ?? '';
+        const baseName = fileName.split('.')[0] ?? fileName;
         const glob = new Bun.Glob(`**/*${baseName}*`);
-        const suggestions = [];
-        let count = 0;
+        const suggestions: string[] = [];
+
         for await (const s of glob.scan('.')) {
           if (!s.includes('node_modules')) {
             suggestions.push(s);
-            if (++count > 5) break;
+            if (suggestions.length >= 5) break;
           }
         }
 
-        const suggestionMsg = suggestions.length > 0 
-          ? `\nSugestões encontradas: ${suggestions.join(', ')}` 
-          : '\nNenhuma sugestão encontrada. Use findFile para localizar o arquivo corretamente.';
-
-        return { error: `Arquivo não encontrado: ${path}.${suggestionMsg}` };
+        return {
+          error: `File not found: ${path}.${
+            suggestions.length > 0
+              ? ` Suggestions: ${suggestions.join(', ')}`
+              : ' Use findFile to locate it.'
+          }`,
+        };
       }
-      const content = await file.text();
-      const result = content.length > 3000 
-        ? { content: content.substring(0, 3000) + '\n\n[OUTPUT_TRUNCATED: Arquivo muito grande, use searchWithGrep ou leia partes específicas se necessário.]' }
-        : { content };
 
-      return result;
+      const raw = await file.text();
+      // ✅ FIX aplicado aqui
+      const { text, truncated } = truncateAtLineBoundary(raw, MAX_CHARS);
+
+      return {
+        content: truncated
+          ? `${text}\n\n[TRUNCATED: file has ${raw.length} chars, showing first ${text.length}. Use searchWithGrep to find specific sections.]`
+          : text,
+      };
     } catch (e: any) {
-      return { error: `Falha ao ler arquivo: ${e.message}` };
+      return { error: `Failed to read file: ${e.message}` };
     }
   },
 });

@@ -47,6 +47,7 @@ const App = () => {
   const [terminalCols, setTerminalCols] = useState(process.stdout.columns || 80)
   const [view, setView] = useState<'home' | 'chat'>('home')
   const [showSidebar, setShowSidebar] = useState(true)
+  const [scrollOffset, setScrollOffset] = useState(0)
 
   const { 
     messages, 
@@ -108,6 +109,8 @@ const App = () => {
     
     if (key.tab) switchAgent()
     if (input.toLowerCase() === 'i' && !isStreaming && view === 'chat') initProject()
+    if (key.pageUp) setScrollOffset(prev => prev + 5)
+    if (key.pageDown) setScrollOffset(prev => Math.max(0, prev - 5))
     if (key.escape && isStreaming) cancelMessage()
     if (key.ctrl && input === 'c') {
       if (!isStreaming) process.exit(0)
@@ -179,16 +182,21 @@ const App = () => {
       </Box>
 
       {/* Main Area */}
-      <Box flexGrow={1} flexDirection="row">
+      <Box flexGrow={1} flexDirection="row" overflow="hidden">
         <Box flexGrow={1} flexDirection="column">
-          <Box flexGrow={1} flexDirection="column">
+          <Box flexGrow={1} flexDirection="column" overflow="hidden">
             {messages.length === 0 && (
               <Box padding={2} flexDirection="column" alignItems="center">
                 <Text color="#666666">Nenhuma regra de projeto detectada (.kore/rules.md)</Text>
                 <Text color="#7a9e7a" bold>Pressione [ i ] para inicializar e gerar regras inteligentes automaticamente</Text>
               </Box>
             )}
-            <MessageList messages={messages} userName={session.userName} onResolvePermission={resolvePermission} />
+            <MessageList 
+              messages={messages} 
+              userName={session.userName} 
+              onResolvePermission={resolvePermission}
+              scrollOffset={scrollOffset}
+            />
           </Box>
           <Box paddingX={1}><Text color="#3A3A3A">{"─".repeat(terminalCols - (effectiveShowSidebar ? 34 : 2))}</Text></Box>
           {pendingPermission ? (

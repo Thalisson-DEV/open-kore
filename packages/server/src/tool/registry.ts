@@ -7,11 +7,16 @@ import { grepTool } from './grep';
 import { findFileTool } from './find-file';
 import { mapProjectTool } from './map-project';
 
-export const getTools = (onConfirm: PermissionCallback) => ({
-  readFile: createReadTool(onConfirm),
-  writeFile: createWriteTool(onConfirm),
-  editFile: createEditTool(onConfirm),
-  executeBash: createBashTool(onConfirm),
+export interface ToolContext {
+  onConfirm: PermissionCallback;
+  activeFiles?: string[];
+}
+
+export const getTools = (context: ToolContext) => ({
+  readFile: createReadTool(context.onConfirm),
+  writeFile: createWriteTool(context.onConfirm, context.activeFiles),
+  editFile: createEditTool(context.onConfirm, context.activeFiles),
+  executeBash: createBashTool(context.onConfirm),
   listWithGlob: globTool,
   searchWithGrep: grepTool,
   findFile: findFileTool,

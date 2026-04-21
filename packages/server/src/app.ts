@@ -183,14 +183,17 @@ app.post('/message', async (c) => {
       return;
     }
 
-    const allTools = getTools(async (req) => {
-      const cached = await toolGuard.getValidCache(session.id, req.tool, req.input);
-      if (cached) return 'yes'; 
-      await stream.writeSSE({
-        data: JSON.stringify({ type: 'permission_required', id: req.id, tool: req.tool, path: req.input.path || req.input.filePath || req.input.command || '', input: req.input, diff: req.diff })
-      })
-      return await PermissionManager.getInstance().waitFor(req.id)
-    })
+    const allTools = getTools({
+      activeFiles: files,
+      onConfirm: async (req) => {
+        const cached = await toolGuard.getValidCache(session.id, req.tool, req.input);
+        if (cached) return 'yes'; 
+        await stream.writeSSE({
+          data: JSON.stringify({ type: 'permission_required', id: req.id, tool: req.tool, path: req.input.path || req.input.filePath || req.input.command || '', input: req.input, diff: req.diff })
+        })
+        return await PermissionManager.getInstance().waitFor(req.id)
+      }
+    });
 
     const tools = Object.fromEntries(Object.entries(allTools).filter(([name]) => activeAgent.tools.includes(name)))
 
