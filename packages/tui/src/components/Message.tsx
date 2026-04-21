@@ -85,6 +85,84 @@ export const Message: React.FC<MessageProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const renderFormattedText = (text: string, baseColor: string, isItalic: boolean) => {
+    if (!text) return null;
+
+    const lines = text.split('\n');
+
+    return (
+      <Box flexDirection="column">
+        {lines.map((line, lineIndex) => {
+          const trimmedLine = line.trim();
+          
+          // Headers (# Título)
+          const isHeader = trimmedLine.startsWith('#');
+          const headerLevel = isHeader ? (trimmedLine.match(/^#+/)?.[0].length || 0) : 0;
+          
+          // Listas (- ou *)
+          const isList = trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ') || /^\d+\.\s/.test(trimmedLine);
+          
+          // Blockquotes (>)
+          const isBlockquote = trimmedLine.startsWith('>');
+          
+          let content = trimmedLine;
+          if (isHeader) content = trimmedLine.replace(/^#+\s*/, '');
+          if (isBlockquote) content = trimmedLine.substring(1).trim();
+          if (isList) {
+            // Mantém o marcador para processamento
+          }
+
+          // Processamos os negritos (**texto**)
+          const boldParts = content.split(/(\*\*.*?\*\*)/g);
+
+          const renderParts = (parts: string[]) => parts.map((part, i) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+              const innerContent = part.slice(2, -2);
+              return (
+                <Text key={i} bold color="#7a9e7a">
+                  {innerContent}
+                </Text>
+              );
+            }
+
+            const codeParts = part.split(/(`.*?`)/g);
+            return codeParts.map((codePart, j) => {
+              if (codePart.startsWith('`') && codePart.endsWith('`')) {
+                return (
+                  <Text key={`${i}-${j}`} color="#EBCB8B">
+                    {codePart.slice(1, -1)}
+                  </Text>
+                );
+              }
+              return <Text key={`${i}-${j}`}>{codePart}</Text>;
+            });
+          });
+
+          return (
+            <Box 
+              key={lineIndex} 
+              flexDirection="row" 
+              marginLeft={isBlockquote ? 2 : (isList ? 1 : 0)} 
+              marginTop={isHeader ? 1 : 0}
+              marginBottom={isHeader ? 0 : 0}
+            >
+              {isBlockquote && <Text color="#7a9e7a" bold>┃ </Text>}
+              {isHeader && <Text color="#7a9e7a" bold>{"█".repeat(Math.max(1, 4 - headerLevel))} </Text>}
+              
+              <Text 
+                color={isHeader ? "#7a9e7a" : baseColor} 
+                bold={isHeader}
+                italic={isItalic || isBlockquote}
+              >
+                {renderParts(boldParts)}
+              </Text>
+            </Box>
+          );
+        })}
+      </Box>
+    );
+  };
+
   // Renderização de Ferramentas
   if (isTool) {
     const isPending = status === 'streaming';
@@ -95,6 +173,9 @@ export const Message: React.FC<MessageProps> = ({
       toolInput?.file_path || 
       toolInput?.directory || 
       toolInput?.command || 
+      toolInput?.pattern ||
+      toolInput?.glob ||
+      (toolInput?.include_pattern && `in ${toolInput.include_pattern}`) ||
       (typeof toolInput === 'string' ? toolInput : '');
     
     const formattedName = toolName ? toolName.charAt(0).toUpperCase() + toolName.slice(1) : '';
@@ -107,7 +188,7 @@ export const Message: React.FC<MessageProps> = ({
           </Text>
           <Text color={isPending ? "#EBCB8B" : (status === 'error' || status === 'canceled' ? "#F85149" : "#7a9e7a")} bold> {formattedName} </Text>
           {resource && (
-            <Text color="#666666"> {resource}</Text>
+            <Text color="#666666"> · {resource}</Text>
           )}
         </Box>
         {status === 'error' && toolOutput && (
@@ -138,9 +219,11 @@ export const Message: React.FC<MessageProps> = ({
       </Box>
       
       <Box paddingLeft={2} marginTop={0}>
-        <Text color={status === 'error' || status === 'canceled' ? "#444444" : "#E0E0E0"} italic={status === 'canceled'}>
-          {status === 'canceled' ? "interrompido pelo usuário" : content}
-        </Text>
+        {renderFormattedText(
+          status === 'canceled' ? "interrompido pelo usuário" : content,
+          status === 'error' || status === 'canceled' ? "#444444" : "#E0E0E0",
+          status === 'canceled'
+        )}
       </Box>
     </Box>
   );

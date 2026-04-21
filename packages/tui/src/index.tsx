@@ -55,9 +55,11 @@ const App = () => {
     sessionUsage,
     sendMessage, 
     cancelMessage,
-    pendingPermission, 
     resolvePermission 
   } = useSSE()
+
+  const pendingMsg = messages.find(m => m.role === 'permission' && m.status === 'pending');
+  const pendingPermission = pendingMsg?.permission || null;
 
   const fetchSession = useCallback(async () => {
     try {
@@ -97,6 +99,13 @@ const App = () => {
   }
 
   useInput((input, key) => {
+    if (pendingPermission && pendingMsg) {
+      if (input.toLowerCase() === 'y') resolvePermission(pendingMsg.id, 'yes')
+      if (input.toLowerCase() === 'n') resolvePermission(pendingMsg.id, 'no')
+      if (input.toLowerCase() === 'a') resolvePermission(pendingMsg.id, 'always')
+      return; // Bloqueia outros inputs enquanto permissão pendente
+    }
+    
     if (key.tab) switchAgent()
     if (input.toLowerCase() === 'i' && !isStreaming && view === 'chat') initProject()
     if (key.escape && isStreaming) cancelMessage()

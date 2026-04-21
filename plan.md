@@ -113,16 +113,16 @@ Qualquer dúvida de implementação: consultar `ARCHITECTURE.md`.
 **Estado ao final:** contexto híbrido garante que o limite de tokens nunca estoure, resumos acontecem em background e o cache estrito reduz chamadas redundantes de I/O.
 
 ### 4.1 — Persistência SQLite Avançada
-- [ ] Criar `session/store.ts` com `bun:sqlite`
-- [ ] Tabela `sessions` — id, project_path (PWD atuando como isolador de contexto), agente, created_at
-- [ ] Tabela `messages` — id, session_id, role, content, **token_count** (vital para métricas), created_at
-- [ ] Tabela `summaries` — id, session_id, condensed_context, last_message_id (Armazena a memória de longo prazo compactada).
+- [x] Criar `session/store.ts` com `bun:sqlite`
+- [x] Tabela `sessions` — id, project_path (PWD atuando como isolador de contexto), agente, created_at
+- [x] Tabela `messages` — id, session_id, role, content, **token_count** (vital para métricas), created_at
+- [x] Tabela `summaries` — id, session_id, condensed_context, last_message_id (Armazena a memória de longo prazo compactada).
 
 ### 4.2 — Memory Manager (Sliding Window Híbrida)
-- [ ] Criar `session/memory.ts` com montagem de payload em 4 blocos: `[System/Rules] + [SQLite Summary] + [Últimas N Interações] + [Novo Comando]`.
-- [ ] Calcular tokens inserindo o tamanho na tabela `messages`.
-- [ ] Truncar outputs de tools (ex: ler arquivos gigantes) acima de 3.000 chars com aviso de `[OUTPUT_TRUNCATED]`.
-- [ ] Budget configurável por provider (default: 32k OpenRouter, 8k Ollama).
+- [x] Criar `session/memory.ts` com montagem de payload em 4 blocos: `[System/Rules] + [SQLite Summary] + [Últimas N Interações] + [Novo Comando]`.
+- [x] Calcular tokens inserindo o tamanho na tabela `messages`.
+- [x] Truncar outputs de tools (ex: ler arquivos gigantes) acima de 3.000 chars com aviso de `[OUTPUT_TRUNCATED]`.
+- [x] Budget configurável por provider (default: 32k OpenRouter, 8k Ollama).
 
 ### 4.3 — Compactação Assíncrona (Tier 1)
 - [ ] Criar `agent/compaction.ts`

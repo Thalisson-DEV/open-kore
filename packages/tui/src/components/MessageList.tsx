@@ -7,7 +7,7 @@ import { PermissionBox } from './PermissionBox';
 interface MessageListProps {
   messages: SSEMessage[];
   userName?: string;
-  onResolvePermission?: (action: 'yes' | 'no' | 'always') => void;
+  onResolvePermission?: (id: string, action: 'yes' | 'no' | 'always') => void;
 }
 
 export const MessageList: React.FC<MessageListProps> = ({ messages, userName, onResolvePermission }) => {
@@ -20,7 +20,7 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, userName, on
               key={msg.id} 
               request={msg.permission} 
               status={msg.status as any} 
-              onResolve={onResolvePermission} 
+              onResolve={(action) => onResolvePermission?.(msg.id, action)} 
             />
           );
         }

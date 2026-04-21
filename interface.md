@@ -283,8 +283,8 @@ Aprovações persistem por sessão. `/permissions` lista e revoga.
 
 ### 6.5 Interrupção e Retomada
 
-- `Ctrl+C` → interrompe a iteração atual, exibe `⊘ cancelado` no bloco
-- `Ctrl+C Ctrl+C` (duplo) → encerra o agente completamente
+- `Esc` → interrompe a iteração atual, exibe `⊘ cancelado` no bloco
+- `Ctrl+C` (duplo) → encerra o agente completamente
 - `/continue` → retoma de onde parou (contexto preservado)
 - `/undo` → reverte o último `write_file` ou `bash` com efeitos
 

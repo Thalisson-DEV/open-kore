@@ -20,9 +20,13 @@ export const createBashTool = (onConfirm: PermissionCallback) => tool({
 
     try {
       const proc = Bun.spawn(['bash', '-c', command]);
-      const stdout = await new Response(proc.stdout).text();
+      let stdout = await new Response(proc.stdout).text();
       const stderr = await new Response(proc.stderr).text();
       const exitCode = await proc.exited;
+
+      if (stdout.length > 3000) {
+        stdout = stdout.substring(0, 3000) + '\n\n[STDOUT_TRUNCATED]';
+      }
 
       return {
         stdout: stdout.trim(),

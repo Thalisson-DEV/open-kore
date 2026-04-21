@@ -16,7 +16,6 @@ export interface SSEMessage {
 export function useSSE() {
   const [messages, setMessages] = useState<SSEMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [pendingPermissionId, setPendingPermissionId] = useState<string | null>(null);
   const [touchedFiles, setTouchedFiles] = useState<string[]>([]);
   const [sessionUsage, setSessionUsage] = useState({ promptTokens: 0, completionTokens: 0, totalTokens: 0 });
   
@@ -69,12 +68,13 @@ export function useSSE() {
             for (const line of lines) {
               const trimmed = line.trim();
               if (trimmed.startsWith('data:')) {
-                dataStr = trimmed.substring(trimmed.indexOf(':') + 1).trim();
+                dataStr += trimmed.substring(trimmed.indexOf(':') + 1).trim();
               }
             }
             if (!dataStr) continue;
             try {
               const data = JSON.parse(dataStr);
+              
               if (data.type === 'text' && typeof data.delta === 'string') {
                 contentRef.current += data.delta;
                 const snapshot = contentRef.current;
@@ -105,15 +105,30 @@ export function useSSE() {
                   totalTokens: prev.totalTokens + data.totalTokens
                 }));
               } else if (data.type === 'permission_required') {
-                setPendingPermissionId(data.id);
+                console.error(`[TUI-SSE] Permissão recebida: ID=${data.id}, TOOL=${data.tool}`);
                 setMessages(prev => {
-                  if (prev.some(m => m.id === data.id)) return prev;
-                  return [...prev, { id: data.id, role: 'permission', content: '', status: 'pending', permission: data }];
+                  const existing = prev.find(m => m.id === data.id);
+                  if (existing) return prev;
+                  return [...prev, { 
+                    id: data.id, 
+                    role: 'permission', 
+                    content: '', 
+                    status: 'pending', 
+                    permission: data,
+                    agentId: data.agent 
+                  }];
                 });
               } else if (data.type === 'finish') {
                 setMessages(prev => prev.map(msg => msg.id === asstMsgId ? { ...msg, status: 'done' } : msg));
+              } else if (data.type === 'error') {
+                console.error(`[TUI-SSE] Erro do servidor: ${data.message}`);
+                setMessages(prev => prev.map(msg =>
+                  msg.id === asstMsgId ? { ...msg, status: 'error', content: data.message } : msg
+                ));
               }
-            } catch (e) {}
+            } catch (e) {
+              console.error('[TUI-SSE] Erro ao processar JSON:', e, dataStr);
+            }
           }
         }
         if (done) break;
@@ -140,18 +155,17 @@ export function useSSE() {
       setIsStreaming(false);
       isBusyRef.current = false;
     }, []),
-    pendingPermission: messages.find(m => m.id === pendingPermissionId)?.permission || null,
-    resolvePermission: useCallback(async (action: 'yes' | 'no' | 'always') => {
-      if (!pendingPermissionId) return;
+    resolvePermission: useCallback(async (id: string, action: 'yes' | 'no' | 'always') => {
       try {
-        await fetch(`http://localhost:8080/permission/${pendingPermissionId}`, {
+        await fetch(`http://localhost:8080/permission/${id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action })
         });
-        setMessages(prev => prev.map(msg => msg.id === pendingPermissionId ? { ...msg, status: action } : msg));
-        setPendingPermissionId(null);
-      } catch (e) {}
-    }, [pendingPermissionId])
+        setMessages(prev => prev.map(msg => msg.id === id ? { ...msg, status: action } : msg));
+      } catch (e) {
+        console.error('[TUI-SSE] Erro ao resolver permissão:', e);
+      }
+    }, [])
   };
 }

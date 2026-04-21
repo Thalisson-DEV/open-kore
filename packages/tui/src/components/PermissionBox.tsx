@@ -42,10 +42,6 @@ export const PermissionBox: React.FC<PermissionBoxProps> = ({ request, status, o
 
   const resource = request.path || request.input?.path || request.input?.filePath || request.input?.command || 'recurso desconhecido';
 
-  if (!isPending) {
-    return null; // Desaparece após resolvido para evitar redundância
-  }
-
   const renderDiff = (diff?: string) => {
     if (!diff || diff.trim().length <= 1) return null;
     return (
@@ -61,16 +57,20 @@ export const PermissionBox: React.FC<PermissionBoxProps> = ({ request, status, o
   };
 
   const getOptionLabel = (opt: 'yes' | 'no' | 'always', index: number) => {
-    const isFocused = focusedIndex === index;
+    const isFocused = focusedIndex === index && isPending;
+    const isSelected = status === opt;
     const labels = { yes: 'permitir', no: 'recusar', always: 'sempre' };
     const key = opt === 'yes' ? 'y' : opt === 'no' ? 'n' : 'a';
 
+    let color = isFocused ? "#000000" : (isSelected ? "#7a9e7a" : "#333333");
+    if (!isPending && !isSelected) color = "#222222";
+
     return (
       <Box marginRight={3} key={opt}>
-        <Text backgroundColor={isFocused ? "#7a9e7a" : "transparent"} color={isFocused ? "#000000" : "#7a9e7a"}>
+        <Text backgroundColor={isFocused ? "#7a9e7a" : "transparent"} color={color}>
           {` ${key} `}
         </Text>
-        <Text color={isFocused ? "#E0E0E0" : "#666666"}> {labels[opt]}</Text>
+        <Text color={isFocused ? "#E0E0E0" : (isSelected ? "#7a9e7a" : "#444444")}> {labels[opt]}</Text>
       </Box>
     );
   };
@@ -79,24 +79,29 @@ export const PermissionBox: React.FC<PermissionBoxProps> = ({ request, status, o
     <Box flexDirection="column" marginY={1} paddingLeft={3} width="100%">
       <Box flexDirection="column" width="100%" backgroundColor="#111111" paddingX={2} paddingY={1}>
         <Box>
-          <Text color="#E0E0E0" bold>PERMISSÃO: </Text>
-          <Text color="#7a9e7a" bold>{request.tool}</Text>
+          <Text color={isPending ? "#E0E0E0" : "#444444"} bold>PERMISSÃO: </Text>
+          <Text color={isPending ? "#7a9e7a" : "#3A3A3A"} bold>{request.tool}</Text>
           <Text color="#222222"> ──────────────────────────────────</Text>
         </Box>
 
         <Box marginTop={0}>
-          <Text color="#666666">Recurso: </Text>
-          <Text color="#A0A0A0">{resource}</Text>
+          <Text color="#444444">Recurso: </Text>
+          <Text color={isPending ? "#A0A0A0" : "#444444"}>{resource}</Text>
         </Box>
 
-        {renderDiff(request.diff) || (
+        {isPending && (renderDiff(request.diff) || (
           <Box marginY={1} paddingLeft={1}>
              <Text color="#444444" italic>(Sem preview disponível)</Text>
           </Box>
-        )}
+        ))}
 
         <Box flexDirection="row" marginTop={1}>
           {options.map((opt, i) => getOptionLabel(opt, i))}
+          {!isPending && (
+             <Box marginLeft={2}>
+               <Text color="#444444" italic>[{status.toUpperCase()}]</Text>
+             </Box>
+          )}
         </Box>
       </Box>
     </Box>
