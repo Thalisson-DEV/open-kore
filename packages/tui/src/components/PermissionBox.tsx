@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Box, Text, useInput } from 'ink';
+import { useKeyboard } from '@opentui/react';
+import { theme } from '../theme';
+import { useTheme } from '../core/ThemeContext';
 
 export interface PermissionRequest {
   id: string;
@@ -20,22 +22,22 @@ export const PermissionBox: React.FC<PermissionBoxProps> = ({ request, status, o
   const [focusedIndex, setFocusedIndex] = useState(0); 
   const options: ('yes' | 'no' | 'always')[] = ['yes', 'no', 'always'];
 
-  useInput((input, key) => {
+  useKeyboard((key) => {
     if (!isPending || !onResolve) return;
 
-    if (key.leftArrow || (key.shift && key.tab)) {
+    if (key.name === 'left' || (key.shift && key.name === 'tab')) {
       setFocusedIndex(prev => (prev > 0 ? prev - 1 : options.length - 1));
-    } else if (key.rightArrow || key.tab) {
+    } else if (key.name === 'right' || key.name === 'tab') {
       setFocusedIndex(prev => (prev < options.length - 1 ? prev + 1 : 0));
-    } else if (key.return) {
+    } else if (key.name === 'return') {
       onResolve(options[focusedIndex]);
-    } else if (key.escape) {
+    } else if (key.name === 'escape') {
       onResolve('no');
-    } else if (input.toLowerCase() === 'y') {
+    } else if (key.name === 'y') {
       onResolve('yes');
-    } else if (input.toLowerCase() === 'n') {
+    } else if (key.name === 'n') {
       onResolve('no');
-    } else if (input.toLowerCase() === 'a') {
+    } else if (key.name === 'a') {
       onResolve('always');
     }
   });
@@ -51,68 +53,75 @@ export const PermissionBox: React.FC<PermissionBoxProps> = ({ request, status, o
     request.input?.glob ||
     'recurso desconhecido';
 
-  const renderDiff = (diff?: string) => {
+  const renderDiffLines = (diff?: string) => {
     if (!diff || diff.trim().length <= 1) return null;
+    
+    const lines = diff.split('\n');
     return (
-      <Box flexDirection="column" marginY={1} paddingX={1}>
-        {diff.split('\n').map((line, i) => {
-          let color = "#666666";
-          if (line.startsWith('+')) color = "#7a9e7a";
-          if (line.startsWith('-')) color = "#F85149";
-          return <Text key={i} color={color}>{line}</Text>;
+      <box style={{ flexDirection: 'column', marginY: 1, paddingLeft: 1, borderLeft: 2, borderColor: theme.accent }}>
+        {lines.map((line, i) => {
+          let fg = theme.fgDim;
+          if (line.startsWith('+')) { fg = theme.success; }
+          else if (line.startsWith('-')) { fg = theme.error; }
+          else if (line.startsWith('@')) { fg = theme.info; }
+
+          return (
+            <text key={i} fg={fg}>  {line}</text>
+          );
         })}
-      </Box>
+      </box>
     );
   };
 
   const getOptionLabel = (opt: 'yes' | 'no' | 'always', index: number) => {
     const isFocused = focusedIndex === index && isPending;
     const isSelected = status === opt;
-    const labels = { yes: 'permitir', no: 'recusar', always: 'sempre' };
-    const key = opt === 'yes' ? 'y' : opt === 'no' ? 'n' : 'a';
+    const labels = { yes: 'PERMITIR', no: 'RECUSAR', always: 'SEMPRE' };
+    const key = opt === 'yes' ? 'Y' : opt === 'no' ? 'N' : 'A';
 
-    let color = isFocused ? "#000000" : (isSelected ? "#7a9e7a" : "#333333");
-    if (!isPending && !isSelected) color = "#222222";
+    const textColor = isFocused ? theme.accent : (isSelected ? theme.accent : theme.fgDim);
+    const finalTextColor = (!isPending && !isSelected) ? "#222222" : textColor;
 
     return (
-      <Box marginRight={3} key={opt}>
-        <Text backgroundColor={isFocused ? "#7a9e7a" : "transparent"} color={color}>
-          {` ${key} `}
-        </Text>
-        <Text color={isFocused ? "#E0E0E0" : (isSelected ? "#7a9e7a" : "#444444")}> {labels[opt]}</Text>
-      </Box>
+      <box key={opt} style={{ marginRight: 3 }}>
+        <text fg={finalTextColor} bold={isFocused || isSelected}>
+          {isFocused ? '› ' : '  '}
+          {`[${key}] ${labels[opt]}`}
+        </text>
+      </box>
     );
   };
 
   return (
-    <Box flexDirection="column" marginY={1} paddingLeft={3} width="100%">
-      <Box flexDirection="column" width="100%" backgroundColor="#111111" paddingX={2} paddingY={1}>
-        <Box>
-          <Text color={isPending ? "#E0E0E0" : "#444444"} bold>PERMISSÃO: </Text>
-          <Text color={isPending ? "#7a9e7a" : "#3A3A3A"} bold>{request.tool}</Text>
-          <Text color="#222222"> ──────────────────────────────────</Text>
-        </Box>
+    <box style={{ flexDirection: "column", marginY: 1, paddingLeft: 2, width: "100%" }}>
+      <box style={{ flexDirection: 'row', marginBottom: 0 }}>
+        <text fg={isPending ? theme.accent : "#333333"} bold>🛡️ PERMISSÃO REQUERIDA: </text>
+        <text fg={isPending ? theme.fg : "#333333"} bold>{request.tool.toUpperCase()}</text>
+      </box>
 
-        <Box marginTop={0}>
-          <Text color="#444444">Recurso: </Text>
-          <Text color={isPending ? "#A0A0A0" : "#444444"}>{resource}</Text>
-        </Box>
+      <box style={{ marginBottom: 0, flexDirection: 'row' }}>
+        <text fg={theme.fgMuted}>Alvo: </text>
+        <text fg={isPending ? theme.fgDim : "#333333"}>{resource}</text>
+      </box>
 
-        {isPending && (renderDiff(request.diff) || (
-          <Box marginY={1} paddingLeft={1}>
-             <Text color="#444444" italic>(Sem preview disponível)</Text>
-          </Box>
-        ))}
-
-        <Box flexDirection="row" marginTop={1}>
-          {options.map((opt, i) => getOptionLabel(opt, i))}
-          {!isPending && (
-             <Box marginLeft={2}>
-               <Text color="#444444" italic>[{status.toUpperCase()}]</Text>
-             </Box>
+      {isPending && (
+        <box style={{ flexDirection: 'column' }}>
+          {renderDiffLines(request.diff) || (
+            <box style={{ marginY: 1 }}>
+               <text fg={theme.fgMuted} italic> (Sem pré-visualização de alterações) </text>
+            </box>
           )}
-        </Box>
-      </Box>
-    </Box>
+        </box>
+      )}
+
+      <box style={{ flexDirection: "row", marginTop: 1, alignItems: 'center' }}>
+        {options.map((opt, i) => getOptionLabel(opt, i))}
+        {!isPending && (
+           <box style={{ marginLeft: 1 }}>
+             <text fg="#222222" italic> [Ação: {status.toUpperCase()}]</text>
+           </box>
+        )}
+      </box>
+    </box>
   );
 };

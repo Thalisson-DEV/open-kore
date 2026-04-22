@@ -106,7 +106,6 @@ export function useSSE() {
                         : msg
                     );
                   } else {
-                    // Se não houver uma mensagem de start correspondente (comum para injeções via @)
                     return [...prev, {
                       id: `tool-${Date.now()}-${Math.random()}`,
                       role: 'tool',
@@ -162,7 +161,10 @@ export function useSSE() {
       }
     } catch (err: any) {
       if (err.name === 'AbortError') {
-        console.log('Stream aborted');
+        // Marcar como cancelado
+        setMessages(prev => prev.map(msg =>
+          msg.id === asstMsgId ? { ...msg, status: 'canceled' } : msg
+        ));
       } else {
         setMessages(prev => prev.map(msg =>
           msg.id === asstMsgId ? { ...msg, status: 'error', content: err.message } : msg

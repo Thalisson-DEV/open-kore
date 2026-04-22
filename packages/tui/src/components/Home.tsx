@@ -1,5 +1,5 @@
 import React from 'react'
-import { Box, Text } from 'ink'
+import { theme } from '../theme'
 import { InputField } from './InputField'
 
 interface HomeProps {
@@ -9,45 +9,45 @@ interface HomeProps {
 
 export const Home: React.FC<HomeProps> = ({ model, onStart }) => {
   return (
-    <Box flexDirection="column" alignItems="center" justifyContent="center" flexGrow={1} backgroundColor="#0A0A0A">
-      {/* ASCII Logo Restaurada */}
-      <Box flexDirection="column" marginBottom={1}>
-        <Text color="#7a9e7a">
+    <box style={{ flexDirection: "column", alignItems: "center", justifyContent: "center", flexGrow: 1, backgroundColor: theme.bg }}>
+      {/* ASCII Logo */}
+      <box style={{ flexDirection: "column", marginBottom: 1 }}>
+        <text fg={theme.accent}>
           {`  ██████╗ ██████╗ ███████╗███╗   ██╗██╗  ██╗ ██████╗ ██████╗ ███████╗
  ██╔═══██╗██╔══██╗██╔════╝████╗  ██║██║ ██╔╝██╔═══██╗██╔══██╗██╔════╝
  ██║   ██║██████╔╝█████╗  ██╔██╗ ██║█████╔╝ ██║   ██║██████╔╝█████╗
  ██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██╔═██╗ ██║   ██║██╔══██╗██╔══╝
  ╚██████╔╝██║     ███████╗██║ ╚████║██║  ██╗╚██████╔╝██║  ██║███████╗
   ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝`}
-        </Text>
-      </Box>
+        </text>
+      </box>
 
-      <Box marginBottom={2}>
-        <Text color="#666666">[ Orchestrating Intelligence ]</Text>
-      </Box>
+      <box style={{ marginBottom: 2 }}>
+        <text fg={theme.fgDim}>[ Orchestrating Intelligence ]</text>
+      </box>
 
-      <Box width={80} flexDirection="column" minHeight={10} justifyContent="flex-end">
+      <box style={{ width: 80, flexDirection: "column", justifyContent: "flex-end" }}>
         <InputField onSubmit={onStart} />
-      </Box>
+      </box>
 
-      <Box marginTop={1} flexDirection="row">
-        <Text color="#666666">[Modo: </Text>
-        <Text color="#7a9e7a">Orquestrador</Text>
-        <Text color="#666666">]  ·  [Modelo: </Text>
-        <Text color="#7a9e7a">{model}</Text>
-        <Text color="#666666">]</Text>
-      </Box>
+      <box style={{ marginTop: 1, flexDirection: "row" }}>
+        <text fg={theme.fgDim}>[Modo: </text>
+        <text fg={theme.accent}>Orquestrador</text>
+        <text fg={theme.fgDim}>]  ·  [Modelo: </text>
+        <text fg={theme.accent}>{model}</text>
+        <text fg={theme.fgDim}>]</text>
+      </box>
 
-      <Box marginTop={2} flexDirection="column" alignItems="center">
-        <Box flexDirection="row">
-          <Text color="#7a9e7a">@ </Text><Text color="#666666">Referenciar arquivo    </Text>
-          <Text color="#7a9e7a">! </Text><Text color="#666666">Executar shell</Text>
-        </Box>
-        <Box flexDirection="row">
-          <Text color="#7a9e7a">/ </Text><Text color="#666666">Comandos               </Text>
-          <Text color="#7a9e7a">Ctrl+X H </Text><Text color="#666666">Ajuda</Text>
-        </Box>
-      </Box>
-    </Box>
+      <box style={{ marginTop: 2, flexDirection: "column", alignItems: "center" }}>
+        <box style={{ flexDirection: "row" }}>
+          <text fg={theme.accent}>@ </text><text fg={theme.fgDim}>Referenciar arquivo    </text>
+          <text fg={theme.accent}>! </text><text fg={theme.fgDim}>Executar shell</text>
+        </box>
+        <box style={{ flexDirection: "row" }}>
+          <text fg={theme.accent}>/ </text><text fg={theme.fgDim}>Comandos               </text>
+          <text fg={theme.accent}>Ctrl+X H </text><text fg={theme.fgDim}>Ajuda</text>
+        </box>
+      </box>
+    </box>
   )
 }

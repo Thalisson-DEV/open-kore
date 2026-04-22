@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/openkore/openkore/ci.yml?branch=main)](https://github.com/openkore/openkore/actions)
 
-[English](README.md) | [Português (Brasil)](README.md) | [简体中文](README.md) | [日本語](README.md) | [한국어](README.md) | [Español](README.md)
+[English](README-en.md) | [Português (Brasil)](README.md) | [Español](README.md)
 
 </div>
 
@@ -17,7 +17,6 @@
 
 ## OpenKore Terminal UI
 
-![OpenKore init TUI Placeholder](assets/init-tui-demo.png)
 ![OpenKore home TUI Placeholder](assets/home-tui-demo.png)
 ![OpenKore chat TUI Placeholder](assets/chat-tui-demo.png)
 
@@ -68,11 +67,12 @@ O OpenKore inclui agentes especializados que você pode alternar usando a tecla 
 
 ## Documentação
 
-Para mais detalhes sobre configuração, comandos e criação de agentes, visite nossa [Documentação Oficial](https://docs.openkore.ai).
+Em desenvolvimento.
 
 ## Contribuição
 
 Interessado em ajudar? Leia nosso guia de [CONTRIBUTING.md](CONTRIBUTING.md) antes de enviar um Pull Request.
+Para mais detalhes sobre, a implementação da TUI visite a documentação [Documentação TUI](packages/tui/convencoes.md).
 
 ## Segurança
 

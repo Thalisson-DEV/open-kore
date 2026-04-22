@@ -1,7 +1,54 @@
-import React, { useState, useEffect } from 'react'
-import { Box, Text } from 'ink'
-import TextInput from 'ink-text-input'
-import SelectInput from 'ink-select-input'
+import React, { useState } from 'react'
+import { useKeyboard } from '@opentui/react'
+import { theme } from '../theme'
+
+interface Option {
+  label: string;
+  value: string;
+}
+
+interface SelectProps {
+  options: Option[];
+  onSelect: (opt: Option) => void;
+  focused: boolean;
+  width?: number;
+}
+
+// Componente Select modular e customizado para o estilo OpenKore
+const Select: React.FC<SelectProps> = ({ options, onSelect, focused, width = 40 }) => {
+  const [index, setIndex] = useState(0);
+
+  useKeyboard((key) => {
+    if (!focused) return;
+    if (key.name === 'up') setIndex(i => (i > 0 ? i - 1 : options.length - 1));
+    if (key.name === 'down') setIndex(i => (i < options.length - 1 ? i + 1 : 0));
+    if (key.name === 'return') onSelect(options[index]);
+  });
+
+  return (
+    <box style={{ flexDirection: 'column', width }}>
+      {options.map((opt, i) => {
+        const isSelected = i === index;
+        return (
+          <box 
+            key={opt.value} 
+            style={{ 
+              backgroundColor: isSelected ? theme.accent : 'transparent', 
+              paddingX: 1,
+              marginTop: 0,
+              marginBottom: 0
+            }}
+          >
+            <text fg={isSelected ? "#000000" : theme.fg} bold={isSelected}>
+              {isSelected ? ' › ' : '   '}
+              {opt.label}
+            </text>
+          </box>
+        );
+      })}
+    </box>
+  );
+};
 
 interface SetupWizardProps {
   onComplete: () => void
@@ -19,16 +66,17 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
 
   const handleNameSubmit = () => setStep(1)
 
-  const handleProviderSelect = async (item: { value: string }) => {
-    setProvider(item.value)
-    if (item.value === 'ollama') {
+  const handleProviderSelect = async (opt: Option) => {
+    const val = opt.value;
+    setProvider(val)
+    if (val === 'ollama') {
       setLoading(true)
       try {
         const res = await fetch('http://localhost:8080/providers/ollama/models')
         const data = await res.json()
         setOllamaModels(data.models || [])
         setLoading(false)
-        setStep(3) // Pula para Tier 1
+        setStep(3)
       } catch (e) {
         setLoading(false)
         setStep(3)
@@ -40,8 +88,8 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
 
   const handleApiKeySubmit = () => setStep(3)
   
-  const handleTier1Select = (item: { value: string }) => {
-    setTier1Model(item.value)
+  const handleTier1Select = (opt: Option) => {
+    setTier1Model(opt.value)
     setStep(4)
   }
 
@@ -50,9 +98,9 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
     setStep(4)
   }
 
-  const handleTier2Select = (item: { value: string }) => {
-    setTier2Model(item.value)
-    handleFinalSubmit(tier1Model, item.value)
+  const handleTier2Select = (opt: Option) => {
+    setTier2Model(opt.value)
+    handleFinalSubmit(tier1Model, opt.value)
   }
 
   const handleTier2TextSubmit = (val: string) => {
@@ -72,7 +120,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
           apiKey: provider === 'ollama' ? 'none' : apiKey, 
           tier1Model: t1,
           tier2Model: t2,
-          model: t2, // Retrocompatibilidade
+          model: t2,
           masterPassword: 'alpha-no-password'
         })
       })
@@ -82,78 +130,141 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
     }
   }
 
-  if (loading) return <Box padding={1}><Text color="gray">Processando...</Text></Box>
+  if (loading) return (
+    <box style={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg }}>
+      <text fg={theme.fgDim}>Configurando seu ambiente...</text>
+    </box>
+  )
 
   return (
-    <Box flexDirection="column" padding={2} flexGrow={1} justifyContent="center" alignItems="center" backgroundColor="#0A0A0A">
-      <Text bold color="#7a9e7a">OpenKore — Primeiro Boot</Text>
+    <box style={{ flexDirection: "column", padding: 2, height: '100%', width: '100%', justifyContent: "center", alignItems: "center", backgroundColor: theme.bg }}>
+      <text bold fg={theme.accent} style={{ marginBottom: 1 }}>OpenKore — Configuração Inicial</text>
       
       {step === 0 && (
-        <Box flexDirection="column" marginTop={1} alignItems="center">
-          <Text color="#666666">Oi, quem é você?</Text>
-          <Box backgroundColor="#111111" paddingX={2} paddingY={1} marginTop={1} minWidth={40}>
-            <Text color="#7a9e7a">› </Text>
-            <TextInput value={userName} onChange={setUserName} onSubmit={handleNameSubmit} placeholder="Seu nome ou apelido" />
-          </Box>
-        </Box>
+        <box key="step0" style={{ flexDirection: "column", alignItems: "center" }}>
+          <text fg={theme.fgDim}>Qual é o seu apelido?</text>
+          <box style={{ 
+            backgroundColor: theme.bgPanel, 
+            marginTop: 1, 
+            borderStyle: 'rounded', 
+            borderColor: theme.accent,
+            flexDirection: 'row',
+            alignItems: 'center',
+            height: 3,
+            paddingX: 1
+          }}>
+            <text fg={theme.accent}> › </text>
+            <input 
+              value={userName} 
+              onInput={setUserName} 
+              onSubmit={handleNameSubmit} 
+              placeholder="Digite seu nome..." 
+              focused={true} 
+              style={{ fg: theme.fg, width: 30, height: 1 }} 
+            />
+          </box>
+          <text fg={theme.fgMuted} style={{ marginTop: 1 }}>Pressione [Enter] para continuar</text>
+        </box>
       )}
 
       {step === 1 && (
-        <Box flexDirection="column" marginTop={1} alignItems="center">
-          <Text color="#666666">Prazer, {userName || 'viajante'}! Selecione seu provider principal:</Text>
-          <Box marginTop={1}>
-            <SelectInput 
-              items={[
+        <box key="step1" style={{ flexDirection: "column", alignItems: "center" }}>
+          <text fg={theme.fgDim}>Olá, {userName}! Selecione seu provedor de IA:</text>
+          <box style={{ marginTop: 1, borderStyle: 'rounded', borderColor: theme.accent, padding: 1, backgroundColor: theme.bgPanel }}>
+            <Select 
+              options={[
                 { label: 'OpenRouter (Nuvem)', value: 'openrouter' },
                 { label: 'Ollama (Local)', value: 'ollama' }
               ]} 
               onSelect={handleProviderSelect} 
+              focused={true}
+              width={35}
             />
-          </Box>
-        </Box>
+          </box>
+        </box>
       )}
 
       {step === 2 && (
-        <Box flexDirection="column" marginTop={1} alignItems="center">
-          <Text color="#666666">Informe sua API Key para {provider}:</Text>
-          <Box backgroundColor="#111111" paddingX={2} paddingY={1} marginTop={1} minWidth={40}>
-            <Text color="#7a9e7a">› </Text>
-            <TextInput value={apiKey} onChange={setApiKey} onSubmit={handleApiKeySubmit} />
-          </Box>
-        </Box>
+        <box key="step2" style={{ flexDirection: "column", alignItems: "center" }}>
+          <text fg={theme.fgDim}>Informe sua API Key para {provider}:</text>
+          <box style={{ 
+            backgroundColor: theme.bgPanel, 
+            marginTop: 1, 
+            borderStyle: 'rounded', 
+            borderColor: theme.accent,
+            flexDirection: 'row',
+            alignItems: 'center',
+            height: 3,
+            paddingX: 1
+          }}>
+            <text fg={theme.accent}> › </text>
+            <input 
+              value={apiKey} 
+              onInput={setApiKey} 
+              onSubmit={handleApiKeySubmit} 
+              password={true}
+              focused={true} 
+              style={{ fg: theme.fg, width: 40, height: 1 }} 
+            />
+          </box>
+        </box>
       )}
 
       {step === 3 && (
-        <Box flexDirection="column" marginTop={1} alignItems="center">
-          <Text color="#666666">Escolha o modelo Tier 1 (Rápido/Leitura):</Text>
-          <Box marginTop={1}>
+        <box key="step3" style={{ flexDirection: "column", alignItems: "center" }}>
+          <text fg={theme.fgDim}>Escolha o modelo Tier 1 (Rápido/Leitura):</text>
+          <box style={{ marginTop: 1, borderStyle: 'rounded', borderColor: theme.accent, padding: 1, backgroundColor: theme.bgPanel }}>
             {provider === 'ollama' && ollamaModels.length > 0 ? (
-              <SelectInput items={ollamaModels.map(m => ({ label: m, value: m }))} onSelect={handleTier1Select} />
+              <Select 
+                options={ollamaModels.map(m => ({ label: m, value: m }))} 
+                onSelect={handleTier1Select} 
+                focused={true}
+                width={40} 
+              />
             ) : (
-              <Box backgroundColor="#111111" paddingX={2} paddingY={1} minWidth={40}>
-                <Text color="#7a9e7a">› </Text>
-                <TextInput value={tier1Model} onChange={setTier1Model} onSubmit={handleTier1TextSubmit} placeholder="Ex: qwen-2.5-coder-7b" />
-              </Box>
+              <box style={{ flexDirection: 'row', alignItems: 'center', height: 1 }}>
+                <text fg={theme.accent}> › </text>
+                <input 
+                  value={tier1Model} 
+                  onInput={setTier1Model} 
+                  onSubmit={handleTier1TextSubmit} 
+                  placeholder="Ex: gpt-4o-mini" 
+                  focused={true} 
+                  style={{ fg: theme.fg, width: 35, height: 1 }} 
+                />
+              </box>
             )}
-          </Box>
-        </Box>
+          </box>
+        </box>
       )}
 
       {step === 4 && (
-        <Box flexDirection="column" marginTop={1} alignItems="center">
-          <Text color="#666666">Escolha o modelo Tier 2 (Inteligente/Escrita):</Text>
-          <Box marginTop={1}>
+        <box key="step4" style={{ flexDirection: "column", alignItems: "center" }}>
+          <text fg={theme.fgDim}>Escolha o modelo Tier 2 (Inteligente/Escrita):</text>
+          <box style={{ marginTop: 1, borderStyle: 'rounded', borderColor: theme.accent, padding: 1, backgroundColor: theme.bgPanel }}>
             {provider === 'ollama' && ollamaModels.length > 0 ? (
-              <SelectInput items={ollamaModels.map(m => ({ label: m, value: m }))} onSelect={handleTier2Select} />
+              <Select 
+                options={ollamaModels.map(m => ({ label: m, value: m }))} 
+                onSelect={handleTier2Select} 
+                focused={true}
+                width={40} 
+              />
             ) : (
-              <Box backgroundColor="#111111" paddingX={2} paddingY={1} minWidth={40}>
-                <Text color="#7a9e7a">› </Text>
-                <TextInput value={tier2Model} onChange={setTier2Model} onSubmit={handleTier2TextSubmit} placeholder="Ex: qwen-2.5-coder-32b" />
-              </Box>
+              <box style={{ flexDirection: 'row', alignItems: 'center', height: 1 }}>
+                <text fg={theme.accent}> › </text>
+                <input 
+                  value={tier2Model} 
+                  onInput={setTier2Model} 
+                  onSubmit={handleTier2TextSubmit} 
+                  placeholder="Ex: claude-3-5-sonnet" 
+                  focused={true} 
+                  style={{ fg: theme.fg, width: 35, height: 1 }} 
+                />
+              </box>
             )}
-          </Box>
-        </Box>
+          </box>
+        </box>
       )}
-    </Box>
+    </box>
   )
 }

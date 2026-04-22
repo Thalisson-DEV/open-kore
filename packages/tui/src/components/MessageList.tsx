@@ -1,5 +1,7 @@
-import React from 'react';
-import { Box, Text } from 'ink';
+import React, { useRef } from 'react';
+import { useKeyboard, useTerminalDimensions } from '@opentui/react';
+import { type ScrollBoxRenderable } from '@opentui/core';
+import { theme } from '../theme';
 import { Message } from './Message';
 import { SSEMessage } from '../hooks/use-sse';
 import { PermissionBox } from './PermissionBox';
@@ -8,70 +10,70 @@ interface MessageListProps {
   messages: SSEMessage[];
   userName?: string;
   onResolvePermission?: (id: string, action: 'yes' | 'no' | 'always') => void;
-  scrollOffset?: number;
 }
 
 export const MessageList: React.FC<MessageListProps> = ({ 
   messages, 
   userName, 
-  onResolvePermission,
-  scrollOffset = 0 
+  onResolvePermission 
 }) => {
-  // Ajusta o offset para não exceder o número de mensagens
-  const effectiveOffset = Math.min(scrollOffset, Math.max(0, messages.length - 5));
-  const displayMessages = messages.slice(0, messages.length - effectiveOffset).slice(-15);
+  const scrollboxRef = useRef<ScrollBoxRenderable | null>(null);
+  const { height } = useTerminalDimensions();
 
-  const hasMoreAbove = messages.length > displayMessages.length + effectiveOffset;
-  const hasMoreBelow = effectiveOffset > 0;
+  useKeyboard((key) => {
+    const box = scrollboxRef.current;
+    if (!box) return;
+
+    if (key.name === 'pageup')   box.scrollBy(-10);
+    if (key.name === 'pagedown') box.scrollBy(10);
+    if (key.ctrl && key.name === 'u') box.scrollBy(-Math.floor(height / 2));
+    if (key.ctrl && key.name === 'd') box.scrollBy(Math.floor(height / 2));
+    if (key.name === 'g' && !key.shift) box.scrollBy(999999);
+  });
 
   return (
-    <Box flexDirection="row" flexGrow={1} paddingX={1} marginTop={1} overflow="hidden">
-      <Box flexDirection="column" flexGrow={1} justifyContent="flex-end">
-        {hasMoreAbove && (
-          <Box justifyContent="center" marginBottom={1}>
-            <Text color="#3A3A3A">▲ Mais mensagens acima (PageUp)</Text>
-          </Box>
-        )}
-        
-        {displayMessages.map((msg) => {
-          if (msg.role === 'permission' && msg.permission) {
-            return (
-              <PermissionBox 
-                key={msg.id} 
-                request={msg.permission} 
-                status={msg.status as any} 
-                onResolve={(action) => onResolvePermission?.(msg.id, action)} 
-              />
-            );
-          }
-          
+    <scrollbox
+      ref={scrollboxRef}
+      stickyScroll={true}
+      stickyStart="bottom"
+      scrollbarOptions={{
+          thickness: 1,
+          color: "#222222"
+      }}
+      style={{
+        flexGrow: 1,
+        width: '100%',
+        height: '100%', // Força ocupação vertical total
+        flexDirection: 'column',
+        paddingLeft: 1,
+        paddingTop: 1
+      }}
+    >
+      {messages.map((msg) => {
+        if (msg.role === 'permission' && msg.permission) {
           return (
-            <Message 
+            <PermissionBox 
               key={msg.id} 
-              role={msg.role as any} 
-              content={msg.content} 
+              request={msg.permission} 
               status={msg.status as any} 
-              userName={userName}
-              toolName={msg.toolName}
-              toolInput={msg.toolInput}
-              toolOutput={msg.toolOutput}
+              onResolve={(action) => onResolvePermission?.(msg.id, action)} 
             />
           );
-        })}
-
-        {hasMoreBelow && (
-          <Box justifyContent="center" marginTop={1}>
-            <Text color="#3A3A3A">▼ Mais mensagens abaixo (PageDown)</Text>
-          </Box>
-        )}
-      </Box>
-
-      {/* Barra de Rolagem Visual */}
-      <Box flexDirection="column" width={1} marginLeft={1} justifyContent="center">
-        <Text color={hasMoreAbove ? "#7a9e7a" : "#222222"}>┃</Text>
-        <Text color="#7a9e7a" bold>┃</Text>
-        <Text color={hasMoreBelow ? "#7a9e7a" : "#222222"}>┃</Text>
-      </Box>
-    </Box>
+        }
+        
+        return (
+          <Message 
+            key={msg.id} 
+            role={msg.role as any} 
+            content={msg.content} 
+            status={msg.status as any} 
+            userName={userName}
+            toolName={msg.toolName}
+            toolInput={msg.toolInput}
+            toolOutput={msg.toolOutput}
+          />
+        );
+      })}
+    </scrollbox>
   );
 };
