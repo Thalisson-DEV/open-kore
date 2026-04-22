@@ -1,41 +1,41 @@
 # Releases
 
-## [v0.1.1] - 2026-04-22
+## [v0.1.1] - 22-04-2026
 
-### Summary
-This release marks a major architectural milestone for **OpenKore**, migrating the entire Terminal User Interface (TUI) stack from Ink to **OpenTUI**. This transition brings native performance (60fps), a robust modular architecture, and a significantly more polished user experience.
-
----
-
-### 🔄 Refactoring & Architecture
-- **TUI Stack Migration**: Replaced `ink` and `ink-text-input` with `@opentui/core` and `@opentui/react`.
-- **Modular OOP Core**:
-  - `TerminalManager`: Centralized control for renderer lifecycle and syntax styles.
-  - `KeyboardManager`: Advanced shortcut handling and leader key (`Ctrl+X`) sequences.
-  - `HistoryManager`: Dedicated service for command history management.
-- **Theme System**: Implemented a centralized `theme.ts` for consistent visual identity.
-
-### ✨ Features
-- **Native High-Performance Components**:
-  - Integrated `<markdown>` for rich, fast assistant responses.
-  - Integrated `<diff>` for clear file modification previews.
-  - Integrated `<code>` for syntax-highlighted bash and code outputs.
-- **Unified Sidebar**: Consolidated session context, active agents, touched files, and tips into a single, efficient panel.
-- **Sticky Scroll**: Native message scrolling that automatically tracks the latest response.
-- **Custom Selectors**: Implemented robust, theme-integrated selection menus for Setup and Quick Actions (`Ctrl+O`).
-
-### 🐛 Bug Fixes
-- **Terminal Corruption**: Fixed an issue where exiting the app with `Ctrl+C` left the terminal in a broken state (gibberish characters).
-- **Stream Stability**: Fixed crashes occurring during rapid stream cancellation (`Esc`).
-- **Layout Integrity**: Resolved several Flexbox issues that caused the chat to "split" or render incorrectly.
-
-### ⚠️ Breaking Changes
-- **StatusBar Removal**: The bottom status bar has been removed. All essential information is now located in the Sidebar.
-- **Stack Update**: **Zig** is now required for building the native core of the application.
+### Resumo
+Este lançamento marca um grande marco arquitetural para o **OpenKore**, migrando toda a stack da Interface de Usuário de Terminal (TUI) do Ink para o **OpenTUI**. Essa transição traz performance nativa (60fps), uma arquitetura modular robusta e uma experiência de usuário significativamente mais polida.
 
 ---
 
-## [v0.1.0-alpha] - 2026-04-15
-- Initial Alpha release with basic Ink-based TUI.
-- Support for OpenRouter and Ollama providers.
-- Basic project mapping and rule generation.
+### Refatoração & Arquitetura
+- **Migração da Stack TUI**: Substituição do `ink` e `ink-text-input` pelo `@opentui/core` e `@opentui/react`.
+- **Núcleo OOP Modular**:
+  - `TerminalManager`: Controle centralizado para o ciclo de vida do renderer e estilos de sintaxe.
+  - `KeyboardManager`: Gerenciamento avançado de atalhos e sequências de teclas de liderança (*leader key* `Ctrl+X`).
+  - `HistoryManager`: Serviço dedicado para gerenciamento do histórico de comandos.
+- **Sistema de Temas**: Implementação de um `theme.ts` centralizado para uma identidade visual consistente.
+
+### Funcionalidades
+- **Componentes Nativos de Alta Performance**:
+  - Integração do `<markdown>` para respostas ricas e rápidas do assistente.
+  - Integração do `<diff>` para visualizações claras de modificações em arquivos.
+  - Integração do `<code>` para saídas de bash e código com realce de sintaxe.
+- **Sidebar Unificada**: Consolidação do contexto da sessão, agentes ativos, arquivos tocados e dicas em um único painel eficiente.
+- **Sticky Scroll**: Rolagem nativa de mensagens que acompanha automaticamente a resposta mais recente.
+- **Seletores Personalizados**: Implementação de menus de seleção robustos e integrados ao tema para o Setup e Ações Rápidas (`Ctrl+O`).
+
+### Correções de Bugs
+- **Corrupção do Terminal**: Corrigido um problema onde sair do aplicativo com `Ctrl+C` deixava o terminal em um estado quebrado (caracteres aleatórios).
+- **Estabilidade de Stream**: Corrigidos crashes que ocorriam durante o cancelamento rápido de streams (`Esc`).
+- **Integridade do Layout**: Resolvidos diversos problemas de Flexbox que causavam a divisão incorreta ou renderização errônea do chat.
+
+### Alterações Quebrantes (*Breaking Changes*)
+- **Remoção da StatusBar**: A barra de status inferior foi removida. Todas as informações essenciais estão agora localizadas na Sidebar.
+- **Atualização da Stack**: O **Zig** agora é necessário para build do núcleo nativo da aplicação.
+
+---
+
+## [v0.1.0-alpha] - 15-04-2026
+- Lançamento Alpha inicial com TUI básica baseada em Ink.
+- Suporte para provedores OpenRouter e Ollama.
+- Mapeamento básico de projeto e geração de regras.
