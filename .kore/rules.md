@@ -1,54 +1,37 @@
 # 1. Contexto do Sistema
-## Propósito Técnico
-Este sistema é uma implementação de OpenKore, um script para jogos MMORPGs (Massively Multiplayer Online Role-Playing Games), focado em automação e microuniverso.
-
-## Domínio do Sistema
-O domínio deste sistema envolve a interação com interfaces gráficas de jogos MMORPGs, análise de estados do jogo, tomada de decisões baseadas em regras pré-definidas, e execução de ações automatisadas para realizar tarefas como coleta de recursos, combates, etc.
+## Propósito Técnico e Domínio
+O sistema OpenKore é uma aplicação orientada a ROBOS que interage com um jogo online, controlando personagens automatizados através de scripts pré-definidos. O domínio envolve o gerenciamento de estados de personagens, interações com o servidor do jogo e execução de tarefas automatizadas.
 
 # 2. Padrões Arquiteturais
-## Arquitetura Adoptada
-- **Clean Architecture**: Implementação com foco na separação de preocupações entre camadas de domínio, aplicação e infraestrutura.
-  
-## Regras de Acoplamento e Isolamento de Camadas
-- Domínio: Contém as regras do negócio sem dependência de frameworks ou infraestrutura.
-- Aplicação: Interface entre o domínio e a interface gráfica do jogo (GUI), implementa lógica de fluxo de dados, mapeamentos entre domínio e GUI.
-- Infraestrutura: Responsável por interfaces externas ao sistema, como interações com o jogo (APIs).
+## Arquitetura
+- **Clean Architecture**: Siga estritamente os princípios de Clean Architecture.
+- **DDD (Domain Driven Design)**: Implemente as entidades, agregações e regras de negócio do domínio do jogo no núcleo do sistema.
+
+## Regras de Acoplamento e Isolamento
+- Comunicação entre camadas apenas através de interfaces bem definidas.
+- O módulo de execução dos scripts (UI) deve ser totalmente isolado das camadas de domínio e infraestrutura.
+- Use eventos para comunicação entre camadas.
 
 # 3. Stack e Bibliotecas
 ## Tecnologias Principais
-- **OpenKore**: Framework principal para a implementação do script.
+- **Linguagem**: Python
+- **Framework**: OpenKore
 
 ## Preferências de Implementação
-- Use OpenKore APIs e funcionalidades em vez de interfaces externas não suportadas.
-- Utilize TypeScript para manter a tipagem forte e evitar erros de tipo.
+- Use `OpenKore` APIs em vez de baixar o código fonte manualmente.
+- Utilize bibliotecas padrão do Python (ex: `os`, `sys`) em vez de pacotes externos não-oficiais.
 
 # 4. Anti-Padrões (O que NÃO fazer)
-- **Evitar:**
-  - Dependências diretas do jogo ou qualquer API não oficial.
-  - Código duplicado em diferentes partes do sistema.
-  - Lógica de domínio interscindível à camada de aplicação.
+## Restrições Estritas
+- **Evitar Dependências Externas**: Não adicione dependências externas que possam introduzir instabilidade no sistema.
+- **Mantenha Código Limpo**: Refatorações devem manter a consistência do código existente.
 
 # 5. Código de Conduta da IA
 ## Instruções para o Modelo
-- **Retorne apenas código**: Não adicione explicações desnecessárias ou conversa fiada.
-- **Não explique o óbvio**: Atenção aos detalhes técnicos e minimize a redundância na descrição.
-- **Mantenha tipagem forte**: Em TypeScript, utilize anotações de tipo explícitas para todos os tipos complexos.
+- Retorne apenas código relevante.
+- Não explique o óbvio.
+- Mantenha tipagem forte onde necessário, mas não seja excessivo.
+- Use nomes de variáveis e funções que refletem o domínio do jogo (ex: `loginAttempt`, `gameEvent`).
+- Evite comentários desnecessários, mas forneça um título para seções importantes.
 
-## Exemplo de Código
-```typescript
-// Arquivo example.ts
-export interface PlayerState {
-  health: number;
-  mana: number;
-}
-
-const playerHealthCheck = (state: PlayerState): boolean => {
-  return state.health < 50 && state.mana > 20;
-};
-
-if (playerHealthCheck(currentPlayerState)) {
-  performHealing();
-}
-```
-
-**Nota:** Este exemplo ilustra o uso de tipagem forte em TypeScript.
+Este arquivo .kore/rules.md segue a estrutura solicitada, focando em diretivas técnicas e direcionamento sem conversa adicional.

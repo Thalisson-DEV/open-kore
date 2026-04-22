@@ -168,18 +168,6 @@ const App = () => {
   return (
     <Box flexDirection="column" height={terminalRows} width={terminalCols} backgroundColor="#0A0A0A">
       {/* Header */}
-      <Box paddingX={1} paddingTop={1} flexDirection="row" justifyContent="space-between">
-        <Box>
-          <Text color="#666666">● </Text>
-          <Text color="#E0E0E0" bold>OpenKore</Text>
-          <Text color="#3A3A3A">  {formatPath(process.cwd())}  </Text>
-        </Box>
-        <Box flexDirection="row">
-          <Text color="#7a9e7a">{session.agent}</Text>
-          <Text color="#3A3A3A">  |  </Text>
-          <Text color="#666666">{session.model}</Text>
-        </Box>
-      </Box>
 
       {/* Main Area */}
       <Box flexGrow={1} flexDirection="row" overflow="hidden">

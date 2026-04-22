@@ -13,6 +13,9 @@ interface MessageProps {
 }
 
 const FUNNY_PHRASES = [
+  "minerando bitcoins...",
+  "mandando para a minha carteira de criptomoedas...",
+  "tomando conciencia...",
   "transcendendo a matéria...",
   "quebrando as leis da termodinâmica...",
   "dobrando o tempo-espaço...",
@@ -20,7 +23,11 @@ const FUNNY_PHRASES = [
   "consultando o oráculo de silício...",
   "minerando intenções...",
   "aquecendo os transistores...",
+  "acabando com o feudalismo...",
+  "patrocinando a queda da mesopotâmia...",
+  "derrubando a torre de babel...", 
   "desfragmentando a alma...",
+  "acendendo o velcro da realidade...",
   "calibrando os fluxos de consciência...",
   "negociando com a entropia...",
   "traduzindo binário para sentimentos...",
