@@ -1,8 +1,7 @@
-# OpenKore
+##
+![OpenKore logo TUI Placeholder](assets/logo-tui-demo.png)
 
 <div align="center">
-
-**O agente de coding open source para quem vive no terminal.**
 
 [![NPM Version](https://img.shields.io/npm/v/openkore.svg)](https://www.npmjs.com/package/openkore)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
