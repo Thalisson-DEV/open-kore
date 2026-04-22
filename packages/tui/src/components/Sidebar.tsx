@@ -43,7 +43,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const spinner = useSpinner(isStreaming);
   const maxTokens = 128000;
   const usagePercent = Math.min(100, Math.round((usage.totalTokens / maxTokens) * 100));
-  const version = 'v0.1.0-alpha';
+  const version = 'v0.1.1';
 
   const [cwd, setCwd] = useState(() => formatPath(process.cwd()));
 

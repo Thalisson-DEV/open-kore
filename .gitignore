@@ -29,7 +29,7 @@ bun-debug.log*
 *.key
 
 # Local configuration (OpenKore specific)
-.openkore/
+.kore/
 
 # IDEs
 .vscode/
