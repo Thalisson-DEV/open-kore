@@ -97,6 +97,6 @@ Como qualquer agente que executa comandos e edita arquivos, o OpenKore deve ser 
 
 ---
 
-<div align="center">
-Feito com ❤️ por Thalisson Damião.
-</div>
+#### Inspirado no [OpenCode](https://opencode.ai/)
+#### Feito com ❤️ por Thalisson Damião.
+
