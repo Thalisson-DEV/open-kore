@@ -83,7 +83,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {files.slice(-8).map((file, i) => (
             <Box key={i} flexDirection="row">
               <Text color="#444444">📄 </Text>
-              <Text color="#666666" textWrap="truncate-end">
+              <Text color="#666666">
                 {file.split('/').pop()}
               </Text>
             </Box>
@@ -91,7 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </Box>
       )}
 
-      <Box marginTop="auto" flexDirection="column">
+      <Box marginTop={1} flexDirection="column">
         <Text color="#7a9e7a" bold>💡 DICAS</Text>
         <Text color="#222222">──────────────────────────</Text>
         <Box flexDirection="row"><Text color="#444444">@ </Text><Text color="#666666">arquivo p/ incluir</Text></Box>

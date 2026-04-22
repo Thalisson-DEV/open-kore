@@ -22,7 +22,7 @@ function truncateAtLineBoundary(content: string, limit: number): { text: string;
 }
 
 export const createReadTool = (onConfirm: PermissionCallback) => tool({
-  description: 'Reads the content of a file from disk. FORBIDDEN: Do not use if the file is already in the "ATTACHED FILES" section of the system prompt.',
+  description: 'CRITICAL: Reads the content of a file from disk. STRICTLY FORBIDDEN: NEVER call this tool if the file is already listed in the "--- Content from referenced files ---" section above. Doing so is redundant and a waste of tokens.',
   parameters: z.object({
     path: z.string().describe('The relative path to the file.'),
   }),
@@ -49,7 +49,6 @@ export const createReadTool = (onConfirm: PermissionCallback) => tool({
       id: `read-${Date.now()}`,
       tool: 'readFile',
       input: { path },
-      path,
     });
 
     if (confirmed === 'no') return { error: 'User denied file read.' };
@@ -92,4 +91,4 @@ export const createReadTool = (onConfirm: PermissionCallback) => tool({
       return { error: `Failed to read file: ${e.message}` };
     }
   },
-});
+} as any);

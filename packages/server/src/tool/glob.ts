@@ -6,7 +6,7 @@ export const globTool = tool({
   parameters: z.object({
     pattern: z.string().describe('O padrão glob para buscar arquivos.'),
   }),
-  execute: async ({ pattern }) => {
+  execute: async ({ pattern }: any) => {
     try {
       const glob = new Bun.Glob(pattern);
       const files = [];
@@ -18,4 +18,4 @@ export const globTool = tool({
       return { error: `Falha ao buscar arquivos com glob: ${e.message}` };
     }
   },
-});
+} as any);

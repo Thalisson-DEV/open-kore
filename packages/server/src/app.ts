@@ -89,7 +89,7 @@ app.get('/files', async (c) => {
     const glob = new Bun.Glob(`**/*${q}*`);
     const files = [];
     let count = 0;
-    for await (const file of glob.scan({ cwd: projectRoot, caseSensitive: false })) {
+    for await (const file of glob.scan({ cwd: projectRoot })) {
       if (file.includes('node_modules') || file.includes('.git') || file.includes('.turbo') || file.includes('dist')) continue;
       
       const relativePath = file.startsWith(projectRoot) 
@@ -203,11 +203,11 @@ app.post('/message', async (c) => {
         messages: messages,
         tools: tools,
         maxSteps: 10,
-        onStepFinish: (step) => {
-          step.toolCalls.forEach(tc => {
+        onStepFinish: (step: any) => {
+          step.toolCalls.forEach((tc: any) => {
             store.addMessage(session.id, 'assistant_tool_call', JSON.stringify(tc));
           });
-          step.toolResults.forEach(tr => {
+          step.toolResults.forEach((tr: any) => {
             if (tr.result && !tr.result.error) {
               toolGuard.saveCache(session.id, tr.toolName, tr.args, tr.result);
             }
@@ -248,10 +248,10 @@ app.post('/message', async (c) => {
 
       if (assistantContent.trim()) {
         const usage = await result.usage;
-        store.addMessage(session.id, 'assistant', assistantContent, usage.completionTokens);
+        store.addMessage(session.id, 'assistant', assistantContent, (usage as any).completionTokens);
         await stream.writeSSE({ data: JSON.stringify({ type: 'usage', ...usage }) })
-      } else if (toolCount > 0) {
-        console.log(`[Server] Iniciando fallback forçado para ${toolCount} ferramentas...`);
+      } else if (toolCount > 0 || !assistantContent.trim()) {
+        console.log(`[Server] Iniciando fallback forçado para ${toolCount} ferramentas ou conteúdo vazio...`);
         try {
           const messagesForFallback = await memory.buildPayload(session.id, config.provider, '', fullSystemPrompt, config.tier1Model);
           
@@ -281,9 +281,10 @@ app.post('/message', async (c) => {
           if (fallbackContent.trim()) {
             console.log(`[Server] Fallback gerou ${fallbackContent.length} caracteres.`);
             const fallbackUsage = await fallbackResult.usage;
-            store.addMessage(session.id, 'assistant', fallbackContent, fallbackUsage.completionTokens);
+            store.addMessage(session.id, 'assistant', fallbackContent, (fallbackUsage as any).completionTokens);
             await stream.writeSSE({ data: JSON.stringify({ type: 'usage', ...fallbackUsage }) })
-          } else {
+          }
+ else {
              console.warn("[Server] Fallback ainda retornou vazio após tentativa forçada.");
              const fallback = "[O agente concluiu a pesquisa, mas o modelo local não gerou um resumo. Por favor, tente perguntar novamente ou use um modelo mais capaz.]";
              store.addMessage(session.id, 'assistant', fallback, 0);

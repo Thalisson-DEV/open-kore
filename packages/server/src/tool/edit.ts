@@ -35,7 +35,7 @@ export const createEditTool = (onConfirm: PermissionCallback, activeFiles?: stri
       id: `edit-${Date.now()}`,
       tool: 'editFile',
       input: { path, oldString, newString },
-      diff: oldString.split('\n').map(l => `- ${l}`).join('\n') + '\n' + newString.split('\n').map(l => `+ ${l}`).join('\n')
+      diff: oldString.split('\n').map((l: string) => `- ${l}`).join('\n') + '\n' + newString.split('\n').map((l: string) => `+ ${l}`).join('\n')
     });
 
     if (action === 'no') {
@@ -66,4 +66,4 @@ export const createEditTool = (onConfirm: PermissionCallback, activeFiles?: stri
       return { error: `Falha ao editar arquivo: ${e.message}` };
     }
   },
-});
+} as any);

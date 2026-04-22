@@ -42,7 +42,7 @@ export const createWriteTool = (onConfirm: PermissionCallback, activeFiles?: str
       id: `write-${Date.now()}`,
       tool: 'writeFile',
       input: { path, content },
-      diff: preview.split('\n').map(l => `+ ${l}`).join('\n')
+      diff: preview.split('\n').map((l: string) => `+ ${l}`).join('\n')
     });
 
     if (action === 'no') {
@@ -56,4 +56,4 @@ export const createWriteTool = (onConfirm: PermissionCallback, activeFiles?: str
       return { error: `Falha ao escrever arquivo: ${e.message}` };
     }
   },
-});
+} as any);

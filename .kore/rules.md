@@ -1,78 +1,47 @@
-# 1. Contexto do Sistema
-## Propósito Técnico e Domínio
-O sistema OpenKore é uma plataforma de automação para jogos, especificamente projetada para interagir e automatizar tarefas em ambientes de MMORPGs (Massively Multiplayer Online Role-Playing Games). O objetivo principal é permitir a criação de bots personalizados que podem executar comandos pré-definidos para realizar tarefas como mineração, pesca ou batalhas.
+Este é o arquivo de regras de alto nível. Não contém nenhuma introdução, conclusão ou texto conversacional.
 
-## Ubiquitous Language
-- Bot: Um script ou conjunto de instruções configurado para automatizar tarefas.
-- Scene: Uma sessão do jogo onde o bot opera.
-- Evento: Uma ação desencadeada pelo jogo que pode ser respondida pelo bot.
-- Comando: Instrução específica executada pelo bot.
+***
 
-# 2. Padrões Arquiteturais
-## Arquitetura Monolito Modular & DDD
-- **Siga princípios de Domain-Driven Design (DDD).**
-- **Comunicação entre módulos apenas via Eventos ou Interfaces.**
-- **Isole a lógica de domínio de frameworks externos.**
+```markdown
+# OpenKore Project Guidelines (Rules.md)
 
-# 3. Stack e Bibliotecas
-## Tecnologias Principais e Preferências de Implementação
-- Use `OpenKore/lib` para acesso ao kernel do jogo.
-- Use componentes funcionais em vez de classes para maior flexibilidade e testabilidade.
+## 1. Contexto do Sistema
+O domínio do sistema é o Processamento Core de Conhecimento Estruturado (Knowledge Core Processing).
+O OpenKore deve ser um sistema robusto de backend responsável por receber dados brutos (Raw Data) e transformá-los em estruturas de domínio coesas, seguindo princípios de Imutabilidade e Transacionalidade.
+**Ubiquitous Language:** Entidades, Casos de Uso, Domínio, Porta, Adaptador.
 
-# 4. Anti-Padrões (O que NÃO fazer)
-## Restrições Estritas
-- **Não use frameworks externos diretamente no domínio.**
-- **Evite a manipulação direta do estado global do jogo.**
-- **Não utilize callbacks desnecessariamente; preferir async/await.**
+## 2. Padrões Arquiteturais
+A arquitetura mandatória é **Clean Architecture (Arquitetura Limpa)**, implementando o padrão **Domain-Driven Design (DDD)**.
 
-# 5. Código de Conduta da IA
-## Instruções para o Modelo
-- Retorne apenas código relevante.
-- Não explique o óbvio.
-- Mantenha tipagem forte e clara.
+### Diretrizes de Camadas:
+1. **Domain Layer (Core):** Deve ser a camada mais isolada. Contém apenas modelos de valor (Value Objects), entidades e interfaces de repositório (Ports). Não deve ter dependência de *frameworks* ou tecnologias externas (ex: ORMs, HTTP).
+2. **Application Layer (Use Cases):** Contém a lógica de orquestração de casos de uso (Use Cases). Esta camada implementa o fluxo transacional, chamando métodos no domínio e utilizando as interfaces definidas no Domain Layer.
+3. **Infrastructure Layer (Adapters):** Implementa as portas (Ports) definidas no Domain Layer. É onde residem os adaptadores concretos (e.g., PostgreSQLAdapter, RESTClientAdapter).
+4. **Presentation Layer (Gateways):** Responsável apenas por receber a requisição e delegá-la ao Application Layer.
 
-```kore
-# Exemplo de regra do arquivo .kore/rules.md
+### Regras de Acoplamento:
+* **Direção de Dependência:** As dependências devem fluir estritamente do nível de abstração mais alto para o mais baixo (Presentation $\to$ Application $\to$ Domain). O Domain Layer não pode depender de nenhuma outra camada.
+* **Comunicação:** A comunicação entre Use Cases ou módulos deve ocorrer exclusivamente através de Eventos de Domínio (Domain Events) ou através da injeção de dependência de Interfaces (Ports).
+* **Código de Domínio:** A lógica de negócios deve residir exclusivamente nas entidades e serviços de domínio. A manipulação de dados (Data Access Logic) deve ser encapsulada nos Repositórios (Infrastructure).
 
-## Não use frameworks externos diretamente no domínio
-# Use OpenKore/lib para acesso ao kernel do jogo
-module core {
-    on init() {
-        # Acesso ao kernel através da lib
-        include "OpenKore/lib"
-        log::info("Inicializando o bot...")
-    }
-}
+## 3. Stack e Bibliotecas
+* **Linguagem:** TypeScript (preferencialmente) ou Python 3.10+.
+* **Tipagem:** Tipagem Forte (Strict Typing) é obrigatória. A inferência de tipos deve ser usada apenas quando não for possível garantir o rigor da tipagem estática.
+* **Estruturação:** Preferir estruturas modulares (Microkernel Pattern) para encapsular cada serviço de domínio.
+* **Persistência:** Utilizar um ORM assíncrono e tipado (ex: TypeORM/Prisma, ou equivalent). Todas as operações de persistência devem ser transacionais.
+* **Testes:** Uso obrigatório de testes unitários, testes de integração e testes de ponta a ponta (E2E). A cobertura de teste deve ser $\ge 90\%$ para a camada de domínio e serviços.
+* **Formatação:** A padronização de código deve ser rigorosa. Utilizar linters e formatters automatizados (Prettier, ESLint, etc.) com configuração obrigatória no `package.json` (ou equivalente).
 
-## Evite a manipulação direta do estado global do jogo
-# Utilize eventos ou interfaces para comunicação entre módulos
-module scene_handler {
-    on event_received(event) {
-        if (event == "on_player_login") {
-            log::info("Jogador logou-se.")
-            # Aqui você pode iniciar as tarefas do bot sem manipular diretamente o estado global
-        }
-    }
-}
+## 4. Anti-Padrões (Proibições Estritas)
+1. **Global State:** É estritamente proibido o uso de variáveis de estado global ou de sessão sem encapsulamento e controle de concorrência.
+2. **Fat Controllers/God Objects:** Não deve haver classes que contenham lógica de negócios, de acesso a dados e de manipulação de requisições. Cada responsabilidade deve ser segregada.
+3. **Mixed Concerns:** Jamais misturar código de acesso a dados (SQL) com lógica de negócios (Domain Logic) dentro do mesmo método ou serviço.
+4. **Hardcoding:** Não pode haver *hardcoding* de credenciais, endpoints, ou valores de domínio em qualquer camada superior à Domain Layer.
 
-## Preferir async/await para evitar callbacks desnecessários
-# Exemplo de uso de async/await em uma função de ataque
-module combat {
-    on enemy_detected(enemy) {
-        log::info("Inimigo detectado: " + enemy.name)
-        
-        # Aguarde a preparação do inimigo antes de atacar
-        await prepare_for_attack(enemy)
-
-        attack(enemy)
-    }
-
-    async function prepare_for_attack(enemy) {
-        while (enemy.state != "ready_to_fight") {
-            sleep(1000)
-        }
-    }
-}
+## 5. Código de Conduta da IA (Tier 2 Instruction Set)
+1. **Formato:** Retorne código apenas dentro dos blocos Markdown. Evite texto explicativo fora dos blocos.
+2. **Profundidade:** Quando fornecer código, inclua sempre comentários de propósito (*Why*) e não apenas de sintaxe (*What*).
+3. **Tipagem:** O código retornado deve ser 100% tipado e seguir o rigor da tipagem estática definido na seção 3.
+4. **Requisitos:** Assuma que todas as dependências de pacotes e *setups* de ambiente são tipados e funcionais.
+5. **Tom:** Mantenha um tom técnico, conciso e diretivo em todas as respostas.
 ```
-
-Este arquivo `.kore/rules.md` fornece uma estrutura clara e direta para o desenvolvimento do bot, garantindo que as regras técnicas e arquiteturais sejam seguidas rigorosamente.

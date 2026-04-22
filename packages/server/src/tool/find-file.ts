@@ -6,7 +6,7 @@ export const findFileTool = tool({
   parameters: z.object({
     fileName: z.string().describe('O nome ou parte do nome do arquivo para buscar (ex: "user.service" ou "config.ts").'),
   }),
-  execute: async ({ fileName }) => {
+  execute: async ({ fileName }: any) => {
     try {
       // Busca ignorando pastas comuns de build e dependências
       const glob = new Bun.Glob(`**/*${fileName}*`);
@@ -31,4 +31,4 @@ export const findFileTool = tool({
       return { error: `Erro ao buscar arquivo: ${e.message}` };
     }
   },
-});
+} as any);

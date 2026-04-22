@@ -7,6 +7,7 @@ interface StatusBarProps {
   agent: string
   model: string
   version?: string
+  status?: 'idle' | 'busy' | 'error' | 'needs_setup'
 }
 
 const formatPath = (p: string) => {
@@ -24,7 +25,7 @@ const formatPath = (p: string) => {
   return projectPath
 }
 
-export const StatusBar: React.FC<StatusBarProps> = ({ agent, model, version = 'v0.1.0-alpha' }) => {
+export const StatusBar: React.FC<StatusBarProps> = ({ agent, model, version = 'v0.1.0-alpha', status = 'idle' }) => {
   const [cwd, setCwd] = useState(() => formatPath(process.cwd()))
   const [time, setTime] = useState(() => {
     const now = new Date()
@@ -47,6 +48,12 @@ export const StatusBar: React.FC<StatusBarProps> = ({ agent, model, version = 'v
     }
   }, [])
 
+  const statusColors = {
+    idle: '#4CAF50',
+    busy: '#FFC107',
+    error: '#F44336',
+    needs_setup: '#2196F3'
+  }
 
   return (
     <Box 
@@ -55,18 +62,23 @@ export const StatusBar: React.FC<StatusBarProps> = ({ agent, model, version = 'v
       paddingX={1}
       flexDirection="row"
     >
-      <Text color="#E0E0E0">
-        <Text color="#E0E0E0">{version}</Text>
-        <Text color="#3A3A3A">  |  </Text>
-        <Text color="#E0E0E0">{cwd}</Text>
-        <Text color="#3A3A3A">  |  </Text>
-        <Text color="#E0E0E0">{agent}</Text>
-        <Text color="#3A3A3A">  |  </Text>
-        <Text color="#E0E0E0">{model}</Text>
-        <Text color="#3A3A3A">  |  </Text>
-        <Text color="#666666">{time}</Text>
-        <Text color="#3A3A3A">  (Ctrl+X) Menu</Text>
-      </Text>
+      <Box flexGrow={1} flexDirection="row">
+        <Text color="#E0E0E0">
+          <Text color="#E0E0E0">{version}</Text>
+          <Text color="#3A3A3A">  |  </Text>
+          <Text color="#E0E0E0">{cwd}</Text>
+          <Text color="#3A3A3A">  |  </Text>
+          <Text color="#E0E0E0">{agent}</Text>
+          <Text color="#3A3A3A">  |  </Text>
+          <Text color="#E0E0E0">{model}</Text>
+          <Text color="#3A3A3A">  |  </Text>
+          <Text color={statusColors[status]}>● </Text>
+          <Text color="#666666">{time}</Text>
+        </Text>
+      </Box>
+      <Box>
+        <Text color="#3A3A3A">(Ctrl+X) Menu</Text>
+      </Box>
     </Box>
   )
 }

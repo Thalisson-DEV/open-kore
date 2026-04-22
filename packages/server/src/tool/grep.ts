@@ -7,7 +7,7 @@ export const grepTool = tool({
     pattern: z.string().describe('The regex pattern to search for.'),
     include: z.string().optional().describe('Glob pattern to filter which files are searched.'),
   }),
-  execute: async ({ pattern, include = '**/*' }) => {
+  execute: async ({ pattern, include = '**/*' }: any) => {
     try {
       // Com flag 'g', o mesmo objeto mantém lastIndex entre chamadas de .test(),
       const regex = new RegExp(pattern);
@@ -37,4 +37,4 @@ export const grepTool = tool({
       return { error: `Failed to execute grep: ${e.message}` };
     }
   },
-});
+} as any);

@@ -27,11 +27,11 @@ export const mapProjectTool = tool({
 
         for (let i = 0; i < filteredEntries.length; i++) {
           if (lineCount >= MAX_LINES) break;
-          
+
           const entry = filteredEntries[i];
           const isLast = i === filteredEntries.length - 1;
           const pointer = isLast ? '└── ' : '├── ';
-          
+
           output += `${prefix}${pointer}${entry.name}${entry.isDirectory() ? '/' : ''}\n`;
           lineCount++;
 
@@ -48,9 +48,10 @@ export const mapProjectTool = tool({
     try {
       output += `${directory || '.'}/\n`;
       await walk(targetDir);
-      return { map: output };
+      return { map: output || '(diretório vazio)' };
     } catch (e: any) {
-      return { error: `Falha ao mapear projeto: ${e.message}` };
+      return { error: `Erro ao mapear projeto: ${e.message}` };
     }
   },
-});
+} as any);
+

@@ -54,7 +54,7 @@ export class MemoryManager {
           const name = filePath.includes('/') ? filePath.substring(filePath.lastIndexOf('/') + 1) : filePath;
           
           const glob = new Bun.Glob(`**/${name}`);
-          for await (const found of glob.scan({ cwd: projectRoot, caseSensitive: false })) {
+          for await (const found of glob.scan({ cwd: projectRoot })) {
             if (found.toLowerCase().endsWith(filePath.toLowerCase())) {
                file = Bun.file(`${projectRoot}/${found}`);
                actualPath = found;

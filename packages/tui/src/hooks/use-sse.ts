@@ -18,7 +18,7 @@ export function useSSE() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [touchedFiles, setTouchedFiles] = useState<string[]>([]);
   const [sessionUsage, setSessionUsage] = useState({ promptTokens: 0, completionTokens: 0, totalTokens: 0 });
-  
+
   const abortControllerRef = useRef<AbortController | null>(null);
   const contentRef = useRef('');
   const isBusyRef = useRef(false);
@@ -52,31 +52,25 @@ export function useSSE() {
       });
 
       if (!response.body) throw new Error('Falha ao conectar com o servidor');
+
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let streamBuffer = '';
 
       while (true) {
-        const { done, value } = await reader.read();
-        if (value) {
-          streamBuffer += decoder.decode(value, { stream: true });
-          const events = streamBuffer.split('\n\n');
-          streamBuffer = events.pop() || ''; 
-          for (const eventStr of events) {
-            const lines = eventStr.split('\n');
-            let dataStr = '';
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (trimmed.startsWith('data:')) {
-                dataStr += trimmed.substring(trimmed.indexOf(':') + 1).trim();
-              }
-            }
-            if (!dataStr) continue;
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
             try {
-              const data = JSON.parse(dataStr);
-              
-              if (data.type === 'text' && typeof data.delta === 'string') {
-                contentRef.current += data.delta;
+              const data = JSON.parse(line.slice(6));
+
+              if (data.type === 'token' || data.type === 'text') {
+                const delta = data.token || data.delta;
+                contentRef.current += delta;
                 const snapshot = contentRef.current;
                 setMessages(prev => prev.map(msg =>
                   msg.id === asstMsgId ? { ...msg, content: snapshot, agentId: data.agent } : msg
@@ -108,7 +102,7 @@ export function useSSE() {
                   if (existingStreaming) {
                     return prev.map(msg =>
                       msg === existingStreaming
-                        ? { ...msg, status: isError ? 'error' : 'done', toolOutput: data.output }
+                        ? { ...msg, content: '', status: isError ? 'error' : 'done', toolOutput: data.output }
                         : msg
                     );
                   } else {
@@ -116,6 +110,7 @@ export function useSSE() {
                     return [...prev, {
                       id: `tool-${Date.now()}-${Math.random()}`,
                       role: 'tool',
+                      content: '',
                       status: isError ? 'error' : 'done',
                       toolName: data.name,
                       toolInput: data.input,
@@ -130,68 +125,88 @@ export function useSSE() {
                   completionTokens: prev.completionTokens + data.completionTokens,
                   totalTokens: prev.totalTokens + data.totalTokens
                 }));
-              } else if (data.type === 'permission_required') {
-                console.error(`[TUI-SSE] Permissão recebida: ID=${data.id}, TOOL=${data.tool}`);
-                setMessages(prev => {
-                  const existing = prev.find(m => m.id === data.id);
-                  if (existing) return prev;
-                  return [...prev, { 
-                    id: data.id, 
-                    role: 'permission', 
-                    content: '', 
-                    status: 'pending', 
-                    permission: data,
-                    agentId: data.agent 
-                  }];
-                });
-              } else if (data.type === 'finish') {
-                setMessages(prev => prev.map(msg => msg.id === asstMsgId ? { ...msg, status: 'done' } : msg));
-              } else if (data.type === 'error') {
-                console.error(`[TUI-SSE] Erro do servidor: ${data.message}`);
+              } else if (data.type === 'permission_request' || data.type === 'permission_required') {
+                const permission = data.permission || {
+                  id: data.id,
+                  tool: data.tool,
+                  input: data.input,
+                  diff: data.diff
+                };
+                setMessages(prev => [...prev, {
+                  id: permission.id || `perm-${Date.now()}`,
+                  role: 'permission',
+                  content: '',
+                  status: 'pending',
+                  permission: permission,
+                  agentId: data.agent
+                }]);
+              } else if (data.type === 'done' || data.type === 'finish') {
                 setMessages(prev => prev.map(msg =>
-                  msg.id === asstMsgId ? { ...msg, status: 'error', content: data.message } : msg
+                  msg.id === asstMsgId ? { ...msg, status: 'done' } : msg
                 ));
+                isBusyRef.current = false;
+                setIsStreaming(false);
+              } else if (data.type === 'error') {
+                const errorMsg = data.error || data.message || 'Erro desconhecido';
+                setMessages(prev => prev.map(msg =>
+                  msg.id === asstMsgId ? { ...msg, status: 'error', content: errorMsg } : msg
+                ));
+                isBusyRef.current = false;
+                setIsStreaming(false);
               }
             } catch (e) {
-              console.error('[TUI-SSE] Erro ao processar JSON:', e, dataStr);
+              console.error('Error parsing SSE data:', e);
             }
           }
         }
-        if (done) break;
       }
-    } catch (e: any) {
-      const status = e.name === 'AbortError' ? 'canceled' : 'error';
-      const errorMsg = e.name === 'AbortError' ? 'interrompido pelo usuário' : `[Erro de conexão: ${e.message}]`;
-      setMessages(prev => prev.map(msg => msg.id === asstMsgId ? { ...msg, status, content: contentRef.current || errorMsg } : msg));
-    } finally {
-      setIsStreaming(false);
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.log('Stream aborted');
+      } else {
+        setMessages(prev => prev.map(msg =>
+          msg.id === asstMsgId ? { ...msg, status: 'error', content: err.message } : msg
+        ));
+      }
       isBusyRef.current = false;
+      setIsStreaming(false);
+    }
+  }, []);
+
+  const stopStreaming = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
       abortControllerRef.current = null;
+      isBusyRef.current = false;
+      setIsStreaming(false);
+    }
+  }, []);
+
+  const resolvePermission = useCallback(async (permissionId: string, choice: 'yes' | 'no' | 'always') => {
+    // Atualizar UI
+    setMessages(prev => prev.map(msg => 
+      msg.id === permissionId ? { ...msg, status: choice } : msg
+    ));
+
+    // Notificar servidor
+    try {
+      await fetch(`http://localhost:8080/permission/${permissionId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-master-password': 'alpha-no-password' },
+        body: JSON.stringify({ action: choice })
+      });
+    } catch (err) {
+      console.error('Error resolving permission:', err);
     }
   }, []);
 
   return {
     messages,
     isStreaming,
+    sendMessage,
+    stopStreaming,
     touchedFiles,
     sessionUsage,
-    sendMessage,
-    cancelMessage: useCallback(() => {
-      if (abortControllerRef.current) abortControllerRef.current.abort();
-      setIsStreaming(false);
-      isBusyRef.current = false;
-    }, []),
-    resolvePermission: useCallback(async (id: string, action: 'yes' | 'no' | 'always') => {
-      try {
-        await fetch(`http://localhost:8080/permission/${id}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action })
-        });
-        setMessages(prev => prev.map(msg => msg.id === id ? { ...msg, status: action } : msg));
-      } catch (e) {
-        console.error('[TUI-SSE] Erro ao resolver permissão:', e);
-      }
-    }, [])
+    resolvePermission
   };
 }

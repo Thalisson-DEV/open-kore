@@ -55,7 +55,7 @@ const App = () => {
     touchedFiles,
     sessionUsage,
     sendMessage, 
-    cancelMessage,
+    stopStreaming,
     resolvePermission 
   } = useSSE()
 
@@ -111,10 +111,10 @@ const App = () => {
     if (input.toLowerCase() === 'i' && !isStreaming && view === 'chat') initProject()
     if (key.pageUp) setScrollOffset(prev => prev + 5)
     if (key.pageDown) setScrollOffset(prev => Math.max(0, prev - 5))
-    if (key.escape && isStreaming) cancelMessage()
+    if (key.escape && isStreaming) stopStreaming()
     if (key.ctrl && input === 'c') {
       if (!isStreaming) process.exit(0)
-      else cancelMessage()
+      else stopStreaming()
     }
   });
 

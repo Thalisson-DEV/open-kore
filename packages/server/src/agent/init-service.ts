@@ -19,7 +19,7 @@ export async function initializeProject(projectRoot: string): Promise<{ success:
   if (!config) return { success: false, message: 'Configuração não encontrada.' };
 
   // 1. Mapear o projeto para contexto
-  const projectMap = await mapProjectTool.execute({ directory: projectRoot }, {} as any);
+  const projectMap = await (mapProjectTool as any).execute({ directory: projectRoot }, {} as any);
   
   // 2. Tentar ler o package.json para mais detalhes
   let packageContext = '';

@@ -26,7 +26,7 @@ export const createBashTool = (onConfirm: PermissionCallback) => tool({
     command: z.string().describe('The shell command to execute.'),
     timeout: z.number().optional().describe('Timeout in milliseconds. Defaults to 30000.'),
   }),
-  execute: async ({ command, timeout = DEFAULT_TIMEOUT_MS }) => {
+  execute: async ({ command, timeout = DEFAULT_TIMEOUT_MS }: any) => {
     const destructiveMatch = isDestructive(command);
     if (destructiveMatch) {
       return { error: `Command blocked: matches destructive pattern (${destructiveMatch}). Refusing to proceed.` };
@@ -72,4 +72,4 @@ export const createBashTool = (onConfirm: PermissionCallback) => tool({
       clearTimeout(timer);
     }
   },
-});
+} as any);
