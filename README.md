@@ -23,22 +23,7 @@
 
 ## Instalação
 
-### Rápida (YOLO)
-```bash
-curl -fsSL https://openkore.ai/install | bash
-```
-
-### Gerenciadores de Pacotes
-```bash
-# Via NPM
-npm i -g openkore@latest
-
-# Via Bun (Recomendado)
-bun install -g openkore
-
-# Via Homebrew (macOS e Linux)
-brew install openkore/tap/openkore
-```
+Em implementação.
 
 ## Agentes
 
