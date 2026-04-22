@@ -18,7 +18,9 @@
 
 ## OpenKore Terminal UI
 
-![OpenKore TUI Placeholder](https://raw.githubusercontent.com/openkore/openkore/main/assets/tui-demo.png)
+![OpenKore init TUI Placeholder](assets/init-tui-demo.png)
+![OpenKore home TUI Placeholder](assets/home-tui-demo.png)
+![OpenKore chat TUI Placeholder](assets/chat-tui-demo.png)
 
 ## Instalação
 
