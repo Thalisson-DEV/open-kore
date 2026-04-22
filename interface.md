@@ -657,7 +657,7 @@ packages/tui/src/components/InputField.tsx
 **`InputField.tsx` — Caixa de Entrada**
 
 - Wrapper: `<Box borderStyle="round" borderColor={value === '' ? '#3A3A3A' : '#7a9e7a'}>`
-- Prefixo `> ` como `<Text color="#7a9e7a">{">"} </Text>` antes do `<TextInput>` do `ink-text-input`
+- Prefixo `> ` como `<text fg="#7a9e7a">{">"} </text>` antes do `<input>` nativo
 - Estado local: `value: string`, `history: string[]`, `historyIndex: number`
 - `↑` decrementa `historyIndex` e carrega entrada anterior; `↓` avança; `Enter` empurra para `history` e reseta `value` e `historyIndex`
 - `onSubmit` recebe o texto e dispara callback prop para `index.tsx`
@@ -1215,7 +1215,7 @@ export const revoke = (name: string) => permissions.delete(name)
 - Spinner Braille rodando a 80ms/frame sem flickering
 - Testar em terminais de 80, 100, 120 e 160 colunas
 - Verificar colapso correto da sidebar em terminais estreitos
-- Garantir que `backgroundColor` não vaze entre componentes no Ink
+- Garantir que `backgroundColor` não vaze entre componentes no renderer
 - Remover todos os `console.log` de debug
 - Validar que `[M]` indicators aparecem apenas em `NODE_ENV=development`
 

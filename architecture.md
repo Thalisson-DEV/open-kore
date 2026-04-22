@@ -8,14 +8,14 @@ O OpenKore é um monorepo TypeScript com dois pacotes principais que se comunica
 openkore/
 ├── packages/
 │   ├── server/          # Core engine: agentes, tools, providers, memória
-│   └── tui/             # Interface terminal: Ink + React
+│   └── tui/             # Interface terminal: @opentui/react + @opentui/core (Zig)
 ├── package.json         # Bun workspaces
 └── turbo.json
 ```
 
 **Runtime:** Bun (não Node). Mais rápido, TypeScript nativo, sem transpilação.  
 **Monorepo:** Turborepo para builds e tasks paralelas.  
-**TUI:** Ink (React para terminal) — mesma escolha do OpenCode antes do OpenTUI.
+**TUI:** OpenTUI (@opentui/react) — Renderer nativo em Zig com suporte a Kitty protocol e 60fps.
 
 ---
 
@@ -29,7 +29,7 @@ openkore/
 | AI SDK | Vercel AI SDK (`ai`) | Provider-agnostic, streaming nativo, tool calling |
 | Providers | OpenRouter + Ollama via AI SDK | Cobertura total de modelos |
 | Memória | SQLite via `bun:sqlite` | Zero dependências, embedded, persistente |
-| TUI | Ink + React | Componentes React no terminal |
+| TUI | @opentui/react | Renderer nativo (Zig), 60fps, Yoga Layout |
 | Configuração | JSON em `~/.openkore/` | Simples, sem YAML |
 
 ---

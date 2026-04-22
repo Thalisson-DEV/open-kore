@@ -34,7 +34,7 @@ Este comando iniciará o servidor e a TUI em modo de observação (watch mode).
 O projeto é dividido em pacotes dentro do diretório `packages/`:
 
 - `packages/server`: O "core" do OpenKore. Contém a lógica dos agentes, integração com LLMs, ferramentas (tools) e gerenciamento de contexto.
-- `packages/tui`: A interface de terminal construída com React e Ink.
+- `packages/tui`: A interface de terminal construída com @opentui/react.
 
 ## 🛠️ Desenvolvimento
 

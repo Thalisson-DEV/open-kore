@@ -6,7 +6,7 @@
 - Monorepo: **Turborepo + Bun workspaces**
 - Servidor: **Hono** (leve, SSE nativo)
 - AI SDK: **Vercel AI SDK** (provider-agnostic, streaming, tool calling)
-- TUI: **Ink + React**
+- TUI: **@opentui/react + @opentui/core** (Nativo em Zig)
 - Banco: **SQLite via `bun:sqlite` (Arquitetura Serverless de Estado)**
 - Providers: **OpenRouter** e **Ollama** — somente esses dois no Alpha
 - Design Pattern da IA: **Tool Calling Estrito (Sem Verbosidade)** e **Model Tiering**.
