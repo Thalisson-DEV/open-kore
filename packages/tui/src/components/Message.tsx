@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { theme } from '../theme';
 import { useSpinner } from '../hooks/use-spinner';
 import { ToolBlock } from './ToolBlock';
 import { useTheme } from '../core/ThemeContext';
+import { useTerminalDimensions } from '@opentui/react';
 
 interface MessageProps {
   role: 'user' | 'assistant' | 'permission' | 'tool';
@@ -12,6 +13,7 @@ interface MessageProps {
   toolName?: string;
   toolInput?: any;
   toolOutput?: any;
+  onActionClick?: () => void;
 }
 
 const FUNNY_PHRASES = [
@@ -55,9 +57,12 @@ const FUNNY_PHRASES = [
 ];
 
 export const Message: React.FC<MessageProps> = ({ 
-  role, content, status, userName, toolName, toolInput, toolOutput 
+  role, content, status, userName, toolName, toolInput, toolOutput, onActionClick
 }) => {
   const { syntaxStyle } = useTheme();
+  const { width } = useTerminalDimensions();
+  const [isHovered, setIsHovered] = useState(false);
+  
   const isAssistant = role === 'assistant';
   const isTool = role === 'tool';
   const isThinking = isAssistant && status === 'streaming' && (!content || content.length === 0);
@@ -98,6 +103,17 @@ export const Message: React.FC<MessageProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Estimativa de linhas para a barra lateral do usuário
+  const messageLines = useMemo(() => {
+    if (role !== 'user') return 0;
+    // Cálculo simples baseado na largura disponível (descontando sidebar e paddings)
+    const availableWidth = width - 40; 
+    const lines = content.split('\n').reduce((acc, line) => {
+      return acc + Math.max(1, Math.ceil(line.length / availableWidth));
+    }, 0);
+    return lines + 2; // +2 para o padding vertical de respiro
+  }, [content, width, role]);
+
   if (isTool) {
     return (
       <ToolBlock 
@@ -110,18 +126,45 @@ export const Message: React.FC<MessageProps> = ({
   }
   
   if (role === 'user') {
+    const bars = [];
+    for (let i = 0; i < messageLines; i++) {
+      bars.push(<text key={i} fg={theme.accent} bold>│</text>);
+    }
+
     return (
-      <box style={{ flexDirection: "column", marginBottom: 1, width: "100%" }}>
+      <box 
+        onMouseOver={() => setIsHovered(true)}
+        onMouseOut={() => setIsHovered(false)}
+        onMouseDown={() => onActionClick?.()}
+        style={{ 
+          flexDirection: "column", 
+          marginBottom: 1, 
+          width: '100%'
+        }}
+      >
         <box 
           style={{
-            backgroundColor: theme.bgPanel,
-            paddingX: 2,
-            paddingY: 1,
-            flexDirection: "row"
+            backgroundColor: isHovered ? '#1A1A1A' : theme.bgPanel,
+            paddingX: 0,
+            paddingY: 0,
+            flexDirection: "row",
           }}
         >
-          <text fg={theme.accent} bold>┃ </text>
-          <box style={{ flexGrow: 1 }}>
+          {/* Barra lateral verde (ou azul no hover) no canto esquerdo absoluto */}
+          <box style={{ flexDirection: "column", width: 1 }}>
+            {bars}
+          </box>
+
+          <box 
+            style={{ 
+              flexDirection: "column", 
+              flexGrow: 1, 
+              paddingTop: 1, 
+              paddingBottom: 1,
+              paddingLeft: 1,
+              paddingRight: 2
+            }}
+          >
             <markdown
               content={content}
               syntaxStyle={syntaxStyle}

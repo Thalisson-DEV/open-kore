@@ -24,13 +24,11 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
         paddingX: 1,
         borderStyle: "rounded",
         borderColor: theme.fgMuted,
-        position: 'absolute',
-        bottom: 3,
-        left: 2,
-        width: 40,
-        zIndex: 100,
+        width: 50,
+        marginBottom: 1
       }}
     >
+
       <text bold fg={theme.accent}> 📎 Sugestões de Arquivos </text>
       <box style={{ flexDirection: 'column', marginTop: 0 }}>
         {suggestions.map((file, i) => {

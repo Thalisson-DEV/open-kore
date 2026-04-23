@@ -9,6 +9,7 @@ import { SetupWizard } from './components/SetupWizard'
 import { ActionDialog } from './components/ActionDialog'
 import { useSSE } from './hooks/use-sse'
 import { KeyboardManager } from './core/KeyboardManager'
+import { TerminalManager } from './core/TerminalManager'
 
 interface Agent {
   id: string;
@@ -27,13 +28,20 @@ interface SessionState {
 }
 
 export const App = () => {
-  const { width, height } = useTerminalDimensions()
+  const { width: hookWidth, height: hookHeight } = useTerminalDimensions()
   const renderer = useRenderer()
+  const width = renderer.width || hookWidth;
+  const height = renderer.height || hookHeight;
+
   const [session, setSession] = useState<SessionState | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<'home' | 'chat'>('home')
   const [showSidebar, setShowSidebar] = useState(true)
   const [showDialog, setShowDialog] = useState(false)
+  const [isInputFocused, setIsInputFocused] = useState(true)
+  const [currentPrompt, setCurrentPrompt] = useState('')
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [leaderActive, setLeaderActive] = useState(false);
 
   const keyboardManager = useMemo(() => KeyboardManager.getInstance(), [])
 
@@ -105,10 +113,38 @@ export const App = () => {
       return; 
     }
     
+    // Leader key logic (Ctrl+X)
+    if (key.ctrl && key.name === 'x') {
+      setLeaderActive(true);
+      setTimeout(() => setLeaderActive(false), 1000);
+      return;
+    }
+
+    if (leaderActive && key.name === 'b') {
+      setShowSidebar(prev => !prev);
+      setLeaderActive(false);
+      return;
+    }
+
     if (key.name === 'tab') switchAgent()
     if (key.name === 'i' && !isStreaming && view === 'chat') initProject()
-    if (key.name === 'escape' && isStreaming) stopStreaming()
+    if (key.name === 'escape') {
+      if (isStreaming) {
+        stopStreaming()
+      } else {
+        setIsInputFocused(prev => !prev)
+      }
+    }
     if (key.ctrl && key.name === 'o') setShowDialog(true)
+    if (key.ctrl && key.name === 's') {
+      const newMode = !selectionMode;
+      setSelectionMode(newMode);
+      if (newMode) {
+        TerminalManager.getInstance().disableMouse();
+      } else {
+        TerminalManager.getInstance().enableMouse();
+      }
+    }
     if (key.ctrl && key.name === 'c') {
       if (!isStreaming) {
         renderer.destroy()
@@ -119,129 +155,133 @@ export const App = () => {
     }
   });
 
-  // Leader key logic
-  const [leaderActive, setLeaderActive] = useState(false);
-  useKeyboard((key) => {
-      if (key.ctrl && key.name === 'x') {
-          setLeaderActive(true);
-          setTimeout(() => setLeaderActive(false), 1000);
-          return;
-      }
-      if (leaderActive && key.name === 'b') {
-          setShowSidebar(prev => !prev);
-          setLeaderActive(false);
-      }
-  });
-
   useEffect(() => {
     fetchSession()
     const interval = setInterval(fetchSession, 5000)
     return () => clearInterval(interval)
   }, [fetchSession])
 
+  useEffect(() => {
+    if (!isStreaming && messages.length > 0) {
+      setIsInputFocused(true)
+    }
+  }, [isStreaming])
+
   const handleStart = (query: string) => {
     if (query.trim()) {
       setView('chat')
       sendMessage(query)
+      setCurrentPrompt('')
+      setIsInputFocused(false)
     }
   }
 
-  if (!session) {
-    return (
-      <box style={{ height: '100%', justifyContent: "center", alignItems: "center", backgroundColor: theme.bg }}>
-        <text fg={theme.fgDim}>Conectando...</text>
-      </box>
-    )
-  }
-
-  if (session.status === 'needs_setup') {
-    return (
-      <box style={{ height: '100%', backgroundColor: theme.bg }}>
-        <SetupWizard onComplete={fetchSession} />
-      </box>
-    )
+  const handleSendMessage = (query: string) => {
+    sendMessage(query)
+    setCurrentPrompt('')
+    setIsInputFocused(false)
   }
 
   const isWideEnough = width > 100;
-  const effectiveShowSidebar = showSidebar && isWideEnough;
+  const effectiveShowSidebar = !!(session && showSidebar && isWideEnough);
+
+  // Ajuste para ocupar a altura total e posicionar o input na base
+  const chatHeight = height; 
 
   return (
-    <box style={{ flexDirection: "column", height: '100%', width: '100%', backgroundColor: theme.bg }}>
-      {view === 'home' ? (
-        <Home model={session.model} onStart={handleStart} />
+    <box style={{ flexDirection: "column", height: height, width: width, backgroundColor: theme.bg }}>
+      {!session ? (
+        <box style={{ flexGrow: 1, justifyContent: "center", alignItems: "center" }}>
+          <text style={{ color: theme.fgDim }}>Conectando...</text>
+        </box>
+      ) : session.status === 'needs_setup' ? (
+        <SetupWizard onComplete={fetchSession} />
       ) : (
-        <box style={{ flexGrow: 1, flexDirection: "row", overflow: "hidden" }}>
+        <box style={{ flexDirection: "row", height: chatHeight, width: width }}>
           {/* Chat Area */}
-          <box style={{ flexGrow: 1, flexShrink: 1, flexBasis: 0, flexDirection: "column", overflow: "hidden" }}>
-            {messages.length === 0 && (
-              <box style={{ padding: 2, flexDirection: "column", alignItems: "center" }}>
-                <text fg={theme.fgDim}>Nenhuma regra de projeto detectada (.kore/rules.md)</text>
-                <text fg={theme.accent} bold>Pressione [ i ] para inicializar e gerar regras inteligentes automaticamente</text>
+          <box style={{ flexGrow: 1, flexDirection: "column" }}>
+            {view === 'home' ? (
+              <Home 
+                model={session.model} 
+                onStart={handleStart} 
+                value={currentPrompt}
+                onValueChange={setCurrentPrompt}
+              />
+            ) : (
+              <box style={{ flexGrow: 1, flexDirection: "column", position: 'relative' }}>
+                {selectionMode && (
+                  <box style={{ 
+                    position: "absolute", 
+                    top: 0, 
+                    right: 2, 
+                    paddingX: 1, 
+                    backgroundColor: theme.accent,
+                    zIndex: 1000 
+                  }}>
+                    <text style={{ color: theme.bg, fontWeight: 'bold' }}> MODO DE SELEÇÃO (Ctrl+S para sair) </text>
+                  </box>
+                )}
+                
+                <box style={{ flexGrow: 1 }}>
+                  {messages.length === 0 && (
+                    <box style={{ padding: 2, flexDirection: "column", alignItems: "center" }}>
+                      <text style={{ color: theme.fgDim }}>Nenhuma regra de projeto detectada (.kore/rules.md)</text>
+                      <text style={{ color: theme.accent, fontWeight: 'bold' }}>Pressione [ i ] para inicializar e gerar regras inteligentes automaticamente</text>
+                    </box>
+                  )}
+                  <MessageList 
+                    key={effectiveShowSidebar ? 'with-sidebar' : 'no-sidebar'}
+                    messages={messages} 
+                    userName={session.userName} 
+                    isInputFocused={isInputFocused}
+                    onResolvePermission={resolvePermission}
+                    onOpenDialog={() => setShowDialog(true)}
+                  />
+                </box>
+
+                {/* AREA DE INPUT */}
+                <box style={{ flexDirection: "column", flexShrink: 0 }}>
+                  <text fg={theme.fgMuted}>{"─".repeat(width - (effectiveShowSidebar ? 34 : 2))}</text>
+                  {pendingPermission ? (
+                    <box style={{ paddingX: 2, paddingY: 1 }}>
+                      <text style={{ color: theme.fgDim }}>Aguardando permissão... [Y/N/A]</text>
+                    </box>
+                  ) : (
+                    <InputField 
+                      onSubmit={handleSendMessage} 
+                      isFocused={isInputFocused} 
+                      value={currentPrompt}
+                      onValueChange={setCurrentPrompt}
+                      isLoading={isStreaming}
+                    />
+                  )}
+                </box>
               </box>
             )}
-            <MessageList 
-              messages={messages} 
-              userName={session.userName} 
-              onResolvePermission={resolvePermission}
-            />
           </box>
 
           {/* Sidebar Area */}
           {effectiveShowSidebar && (
-            <box style={{ width: 32, flexGrow: 0, flexShrink: 0 }}>
-               <Sidebar 
-                 agents={session.agents} 
-                 activeAgentId={session.agent} 
-                 isStreaming={isStreaming} 
-                 model={session.model}
-                 files={touchedFiles}
-                 usage={sessionUsage}
-               />
+            <box style={{ width: 32, flexShrink: 0 }}>
+              <Sidebar 
+                agents={session.agents} 
+                activeAgentId={session.agent} 
+                isStreaming={isStreaming} 
+                model={session.model}
+                files={touchedFiles}
+                usage={sessionUsage}
+              />
             </box>
-          )}
-        </box>
-      )}
-
-      {/* AREA DE INPUT */}
-      {view === 'chat' && (
-        <box style={{ flexDirection: "column" }}>
-          <box style={{ paddingX: 1 }}>
-            <text fg={theme.fgMuted}>{"─".repeat(width - 2)}</text>
-          </box>
-          {pendingPermission ? (
-            <box style={{ paddingX: 2, paddingY: 1 }}>
-              <text fg={theme.fgDim}>Aguardando permissão... [Y/N/A]</text>
-            </box>
-          ) : isStreaming ? (
-            <box style={{ paddingX: 2, paddingY: 1, flexDirection: "row" }}>
-              <text fg={theme.fgDim}>Aguardando resposta da IA...</text>
-              <box style={{ marginLeft: 1 }}>
-                <text fg={theme.fgMuted}>[Esc] Interromper</text>
-              </box>
-            </box>
-          ) : (
-            <InputField onSubmit={sendMessage} />
           )}
         </box>
       )}
 
       {showDialog && (
-        <box 
-          style={{
-            position: "absolute", 
-            width: '100%', 
-            height: '100%', 
-            justifyContent: "center", 
-            alignItems: "center",
-            zIndex: 100
-          }}
-        >
-          <ActionDialog 
-            onClose={() => setShowDialog(false)} 
-            onCopy={handleCopy}
-            onFork={() => setShowDialog(false)}
-          />
-        </box>
+        <ActionDialog 
+          onClose={() => setShowDialog(false)} 
+          onCopy={handleCopy}
+          onFork={() => setShowDialog(false)}
+        />
       )}
     </box>
   )

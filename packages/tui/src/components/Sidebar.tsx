@@ -58,8 +58,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <box 
       style={{
         flexDirection: "column", 
-        width: 32, // Restaurado para uma largura confortável
-        flexShrink: 0, // Garante que a sidebar nunca encolha
+        width: 32, 
+        flexShrink: 0, 
         backgroundColor: theme.bgPanel,
         paddingX: 2,
         paddingY: 1,
@@ -67,9 +67,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         justifyContent: "flex-start"
       }}
     >
-      <scrollbox 
-        style={{ flexGrow: 1, flexDirection: 'column' }}
-        scrollbarOptions={{ thickness: 0 }}
+      <box 
+        style={{ flexGrow: 1, flexDirection: 'column', overflow: 'hidden' }}
       >
         {/* 1. CONTEXTO */}
         <box style={{ marginBottom: 1, flexDirection: "column" }}>
@@ -127,7 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <text fg="#222222">──────────────────────────</text>
           </box>
         )}
-      </scrollbox>
+      </box>
 
       {/* 4. DICAS */}
       <box style={{ marginTop: 'auto', flexDirection: "column" }}>

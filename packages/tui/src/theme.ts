@@ -11,6 +11,6 @@ export const theme = {
   warning:     '#D29922',
   error:       '#F85149',
   info:        '#58A6FF',
-  diffAdd:     '#1C361C',
-  diffRem:     '#3A1A1A',
+  diffAdd:     '#7a9e7a',
+  diffRem:     '#f38983',
 } as const;

@@ -50,6 +50,48 @@ const Select: React.FC<SelectProps> = ({ options, onSelect, focused, width = 40 
   );
 };
 
+interface SetupInputProps {
+  children: React.ReactNode;
+  height?: number;
+}
+
+const SetupInput: React.FC<SetupInputProps> = ({ children, height = 3 }) => {
+  const bars = [];
+  for (let i = 0; i < height; i++) {
+    bars.push(<text key={i} fg={theme.accent}>│</text>);
+  }
+
+  return (
+    <box 
+      style={{
+        backgroundColor: theme.bgPanel,
+        paddingX: 0,
+        paddingY: 0, 
+        flexDirection: "row",
+        height,
+        marginTop: 1,
+        width: 'auto',
+      }}
+    >
+      <box style={{ flexDirection: "column", width: 1 }}>
+        {bars}
+      </box>
+      <box 
+        style={{ 
+          flexDirection: "row", 
+          flexGrow: 1, 
+          paddingY: 1,
+          paddingLeft: 1,
+          paddingRight: 2,
+          alignItems: "center"
+        }}
+      >
+        {children}
+      </box>
+    </box>
+  );
+};
+
 interface SetupWizardProps {
   onComplete: () => void
 }
@@ -143,16 +185,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
       {step === 0 && (
         <box key="step0" style={{ flexDirection: "column", alignItems: "center" }}>
           <text fg={theme.fgDim}>Qual é o seu apelido?</text>
-          <box style={{ 
-            backgroundColor: theme.bgPanel, 
-            marginTop: 1, 
-            borderStyle: 'rounded', 
-            borderColor: theme.accent,
-            flexDirection: 'row',
-            alignItems: 'center',
-            height: 3,
-            paddingX: 1
-          }}>
+          <SetupInput>
             <text fg={theme.accent}> › </text>
             <input 
               value={userName} 
@@ -162,7 +195,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
               focused={true} 
               style={{ fg: theme.fg, width: 30, height: 1 }} 
             />
-          </box>
+          </SetupInput>
           <text fg={theme.fgMuted} style={{ marginTop: 1 }}>Pressione [Enter] para continuar</text>
         </box>
       )}
@@ -170,7 +203,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
       {step === 1 && (
         <box key="step1" style={{ flexDirection: "column", alignItems: "center" }}>
           <text fg={theme.fgDim}>Olá, {userName}! Selecione seu provedor de IA:</text>
-          <box style={{ marginTop: 1, borderStyle: 'rounded', borderColor: theme.accent, padding: 1, backgroundColor: theme.bgPanel }}>
+          <SetupInput height={4}>
             <Select 
               options={[
                 { label: 'OpenRouter (Nuvem)', value: 'openrouter' },
@@ -180,23 +213,14 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
               focused={true}
               width={35}
             />
-          </box>
+          </SetupInput>
         </box>
       )}
 
       {step === 2 && (
         <box key="step2" style={{ flexDirection: "column", alignItems: "center" }}>
           <text fg={theme.fgDim}>Informe sua API Key para {provider}:</text>
-          <box style={{ 
-            backgroundColor: theme.bgPanel, 
-            marginTop: 1, 
-            borderStyle: 'rounded', 
-            borderColor: theme.accent,
-            flexDirection: 'row',
-            alignItems: 'center',
-            height: 3,
-            paddingX: 1
-          }}>
+          <SetupInput>
             <text fg={theme.accent}> › </text>
             <input 
               value={apiKey} 
@@ -206,63 +230,63 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete }) => {
               focused={true} 
               style={{ fg: theme.fg, width: 40, height: 1 }} 
             />
-          </box>
+          </SetupInput>
         </box>
       )}
 
       {step === 3 && (
         <box key="step3" style={{ flexDirection: "column", alignItems: "center" }}>
           <text fg={theme.fgDim}>Escolha o modelo Tier 1 (Rápido/Leitura):</text>
-          <box style={{ marginTop: 1, borderStyle: 'rounded', borderColor: theme.accent, padding: 1, backgroundColor: theme.bgPanel }}>
-            {provider === 'ollama' && ollamaModels.length > 0 ? (
+          {provider === 'ollama' && ollamaModels.length > 0 ? (
+            <SetupInput height={Math.min(ollamaModels.length + 2, 10)}>
               <Select 
                 options={ollamaModels.map(m => ({ label: m, value: m }))} 
                 onSelect={handleTier1Select} 
                 focused={true}
                 width={40} 
               />
-            ) : (
-              <box style={{ flexDirection: 'row', alignItems: 'center', height: 1 }}>
-                <text fg={theme.accent}> › </text>
-                <input 
-                  value={tier1Model} 
-                  onInput={setTier1Model} 
-                  onSubmit={handleTier1TextSubmit} 
-                  placeholder="Ex: gpt-4o-mini" 
-                  focused={true} 
-                  style={{ fg: theme.fg, width: 35, height: 1 }} 
-                />
-              </box>
-            )}
-          </box>
+            </SetupInput>
+          ) : (
+            <SetupInput>
+              <text fg={theme.accent}> › </text>
+              <input 
+                value={tier1Model} 
+                onInput={setTier1Model} 
+                onSubmit={handleTier1TextSubmit} 
+                placeholder="Ex: gpt-4o-mini" 
+                focused={true} 
+                style={{ fg: theme.fg, width: 35, height: 1 }} 
+              />
+            </SetupInput>
+          )}
         </box>
       )}
 
       {step === 4 && (
         <box key="step4" style={{ flexDirection: "column", alignItems: "center" }}>
           <text fg={theme.fgDim}>Escolha o modelo Tier 2 (Inteligente/Escrita):</text>
-          <box style={{ marginTop: 1, borderStyle: 'rounded', borderColor: theme.accent, padding: 1, backgroundColor: theme.bgPanel }}>
-            {provider === 'ollama' && ollamaModels.length > 0 ? (
+          {provider === 'ollama' && ollamaModels.length > 0 ? (
+            <SetupInput height={Math.min(ollamaModels.length + 2, 10)}>
               <Select 
                 options={ollamaModels.map(m => ({ label: m, value: m }))} 
                 onSelect={handleTier2Select} 
                 focused={true}
                 width={40} 
               />
-            ) : (
-              <box style={{ flexDirection: 'row', alignItems: 'center', height: 1 }}>
-                <text fg={theme.accent}> › </text>
-                <input 
-                  value={tier2Model} 
-                  onInput={setTier2Model} 
-                  onSubmit={handleTier2TextSubmit} 
-                  placeholder="Ex: claude-3-5-sonnet" 
-                  focused={true} 
-                  style={{ fg: theme.fg, width: 35, height: 1 }} 
-                />
-              </box>
-            )}
-          </box>
+            </SetupInput>
+          ) : (
+            <SetupInput>
+              <text fg={theme.accent}> › </text>
+              <input 
+                value={tier2Model} 
+                onInput={setTier2Model} 
+                onSubmit={handleTier2TextSubmit} 
+                placeholder="Ex: claude-3-5-sonnet" 
+                focused={true} 
+                style={{ fg: theme.fg, width: 35, height: 1 }} 
+              />
+            </SetupInput>
+          )}
         </box>
       )}
     </box>

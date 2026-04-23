@@ -22,6 +22,8 @@ export class TerminalManager {
       exitOnCtrlC: false,
       screenMode: 'alternate-screen',
       backgroundColor: theme.bg,
+      width: process.stdout.columns,
+      height: process.stdout.rows,
       targetFps: 30,
       maxFps: 60,
       useKittyKeyboard: {},
@@ -33,6 +35,14 @@ export class TerminalManager {
 
     this.setupCleanup();
     return this._renderer;
+  }
+
+  public disableMouse() {
+    process.stdout.write('\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l');
+  }
+
+  public enableMouse() {
+    process.stdout.write('\x1b[?1000h\x1b[?1002h\x1b[?1003h\x1b[?1006h');
   }
 
   private setupCleanup() {

@@ -3,6 +3,8 @@ import { TerminalManager } from './core/TerminalManager';
 import { ThemeProvider } from './core/ThemeContext';
 import { App } from './App';
 
+process.setMaxListeners(20);
+
 const terminal = TerminalManager.getInstance();
 const renderer = await terminal.initialize();
 

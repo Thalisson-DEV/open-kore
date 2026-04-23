@@ -14,10 +14,15 @@ export function useFileSuggestions(value: string) {
       fetch(`http://localhost:8080/files?q=${query}`)
         .then(res => res.json())
         .then(data => {
-          if (data.files && data.files.length > 0) {
-            setSuggestions(data.files);
+          const newFiles = data.files || [];
+          if (newFiles.length > 0) {
+            setSuggestions(prev => {
+              // Só atualiza se a lista for diferente para evitar resets de index desnecessários
+              if (JSON.stringify(prev) === JSON.stringify(newFiles)) return prev;
+              setSelectedIndex(0);
+              return newFiles;
+            });
             setShowSuggestions(true);
-            setSelectedIndex(0);
           } else {
             setSuggestions([]);
             setShowSuggestions(false);

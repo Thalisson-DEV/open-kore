@@ -5,9 +5,11 @@ import { InputField } from './InputField'
 interface HomeProps {
   model: string
   onStart: (query: string) => void
+  value: string
+  onValueChange: (val: string) => void
 }
 
-export const Home: React.FC<HomeProps> = ({ model, onStart }) => {
+export const Home: React.FC<HomeProps> = ({ model, onStart, value, onValueChange }) => {
   return (
     <box style={{ flexDirection: "column", alignItems: "center", justifyContent: "center", flexGrow: 1, backgroundColor: theme.bg }}>
       {/* ASCII Logo */}
@@ -27,7 +29,7 @@ export const Home: React.FC<HomeProps> = ({ model, onStart }) => {
       </box>
 
       <box style={{ width: 80, flexDirection: "column", justifyContent: "flex-end" }}>
-        <InputField onSubmit={onStart} />
+        <InputField onSubmit={onStart} value={value} onValueChange={onValueChange} />
       </box>
 
       <box style={{ marginTop: 1, flexDirection: "row" }}>

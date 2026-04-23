@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { useKeyboard } from '@opentui/react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useKeyboard, useRenderer } from '@opentui/react';
+import { DiffRenderable } from '@opentui/core';
 import { theme } from '../theme';
 import { useTheme } from '../core/ThemeContext';
 
@@ -17,10 +18,85 @@ interface PermissionBoxProps {
   onResolve?: (action: 'yes' | 'no' | 'always') => void;
 }
 
+function getDiffHeight(diffString: string, maxHeight = 20): number {
+  if (!diffString?.trim()) return 0;
+  const lines = diffString.split('\n').length;
+  // +2 para margem (header do hunk + linha vazia final)
+  return Math.min(lines + 2, maxHeight);
+}
+
+function fixDiffHeader(diffString: string): string {
+  if (diffString.includes('@@')) return diffString;
+
+  const lines = diffString.split('\n');
+  let removed = 0;
+  let added = 0;
+  let neutral = 0;
+
+  for (const line of lines) {
+    if (line.startsWith('-')) removed++;
+    else if (line.startsWith('+')) added++;
+    else neutral++;
+  }
+
+  const oldCount = removed + neutral;
+  const newCount = added + neutral;
+
+  return `--- a/file\n+++ b/file\n@@ -1,${oldCount} +1,${newCount} @@\n${diffString}`;
+}
+
+function DiffBlock({ diffString, height, syntaxStyle }: { diffString: string, height: number, syntaxStyle: string }) {
+  const renderer = useRenderer();
+  const containerRef = useRef<any>(null);
+  const diffRef = useRef<DiffRenderable | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current || !diffString) return;
+
+    const finalDiff = fixDiffHeader(diffString);
+
+    if (diffRef.current) {
+      diffRef.current.destroy();
+    }
+
+    const diffRenderable = new DiffRenderable(renderer, {
+      id: `diff-${Math.random()}`,
+      width: '100%',
+      height,
+      diff: finalDiff,
+      view: 'unified',
+      addedBg: theme.diffAdd,
+      removedBg: theme.diffRem,
+      showLineNumbers: true,
+      syntaxStyle,
+    });
+
+    containerRef.current.add(diffRenderable);
+    diffRef.current = diffRenderable;
+
+    return () => {
+      diffRenderable.destroy();
+    };
+  }, [diffString, height, renderer, syntaxStyle]);
+
+  return (
+    <box
+      ref={containerRef}
+      style={{
+        width: '100%',
+        height,
+        flexDirection: 'column',
+      }}
+    />
+  );
+}
+
 export const PermissionBox: React.FC<PermissionBoxProps> = ({ request, status, onResolve }) => {
+  const { syntaxStyle } = useTheme();
   const isPending = status === 'pending';
   const [focusedIndex, setFocusedIndex] = useState(0); 
   const options: ('yes' | 'no' | 'always')[] = ['yes', 'no', 'always'];
+  const diffHeight = getDiffHeight(request.diff ?? '');
 
   useKeyboard((key) => {
     if (!isPending || !onResolve) return;
@@ -53,26 +129,6 @@ export const PermissionBox: React.FC<PermissionBoxProps> = ({ request, status, o
     request.input?.glob ||
     'recurso desconhecido';
 
-  const renderDiffLines = (diff?: string) => {
-    if (!diff || diff.trim().length <= 1) return null;
-    
-    const lines = diff.split('\n');
-    return (
-      <box style={{ flexDirection: 'column', marginY: 1, paddingLeft: 1, borderLeft: 2, borderColor: theme.accent }}>
-        {lines.map((line, i) => {
-          let fg = theme.fgDim;
-          if (line.startsWith('+')) { fg = theme.success; }
-          else if (line.startsWith('-')) { fg = theme.error; }
-          else if (line.startsWith('@')) { fg = theme.info; }
-
-          return (
-            <text key={i} fg={fg}>  {line}</text>
-          );
-        })}
-      </box>
-    );
-  };
-
   const getOptionLabel = (opt: 'yes' | 'no' | 'always', index: number) => {
     const isFocused = focusedIndex === index && isPending;
     const isSelected = status === opt;
@@ -93,7 +149,7 @@ export const PermissionBox: React.FC<PermissionBoxProps> = ({ request, status, o
   };
 
   return (
-    <box style={{ flexDirection: "column", marginY: 1, paddingLeft: 2, width: "100%" }}>
+    <box style={{ flexDirection: "column", marginY: 1, paddingLeft: 2, width: "100%", flexShrink: 0 }}>
       <box style={{ flexDirection: 'row', marginBottom: 0 }}>
         <text fg={isPending ? theme.accent : "#333333"} bold>🛡️ PERMISSÃO REQUERIDA: </text>
         <text fg={isPending ? theme.fg : "#333333"} bold>{request.tool.toUpperCase()}</text>
@@ -105,8 +161,16 @@ export const PermissionBox: React.FC<PermissionBoxProps> = ({ request, status, o
       </box>
 
       {isPending && (
-        <box style={{ flexDirection: 'column' }}>
-          {renderDiffLines(request.diff) || (
+        <box style={{ flexDirection: 'column', marginTop: 1 }}>
+          {request.diff && request.diff.trim().length > 1 ? (
+            <box style={{ borderLeft: 2, borderColor: theme.accent, paddingLeft: 1 }}>
+              <DiffBlock 
+                diffString={request.diff} 
+                height={diffHeight} 
+                syntaxStyle={syntaxStyle} 
+              />
+            </box>
+          ) : (
             <box style={{ marginY: 1 }}>
                <text fg={theme.fgMuted} italic> (Sem pré-visualização de alterações) </text>
             </box>
@@ -125,3 +189,5 @@ export const PermissionBox: React.FC<PermissionBoxProps> = ({ request, status, o
     </box>
   );
 };
+
+
